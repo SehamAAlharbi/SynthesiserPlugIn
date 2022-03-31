@@ -6,11 +6,11 @@
          point="org.eclipse.ui.commands">
       <category
             id="SynthesiserPlugIn.commands.category"
-            name="Sample Category">
+            name="Synthesiser">
       </category>
       <command
             categoryId="SynthesiserPlugIn.commands.category"
-            name="Sample Command"
+            name="Synthesis Code"
             id="SynthesiserPlugIn.commands.sampleCommand">
       </command>
    </extension>

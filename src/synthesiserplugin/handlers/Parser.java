@@ -1,5 +1,7 @@
 package synthesiserplugin.handlers;
 
+import java.util.Map;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -14,78 +16,84 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 
- 
+import synthesiserplugin.transformers.MethodDeclarationTransformer;
+import synthesiserplugin.visitors.MethodDeclarationVisitor;
+
 public class Parser extends AbstractHandler {
- 
-        @Override
-        public Object execute(ExecutionEvent event) throws ExecutionException {
-                IWorkspace workspace = ResourcesPlugin.getWorkspace();
-                IWorkspaceRoot root = workspace.getRoot();
-                // Get all projects in the workspace
-                IProject[] projects = root.getProjects();
-                // Loop over all projects
-                for (IProject project : projects) {
-                        try {
-                                if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
- 
-                                        IPackageFragment[] packages = JavaCore.create(project)
-                                                        .getPackageFragments();
-                                        // parse(JavaCore.create(project));
-                                        for (IPackageFragment mypackage : packages) {
-                                                if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
-                                                        for (ICompilationUnit unit : mypackage
-                                                                        .getCompilationUnits()) {
-                                                                // Now create the AST for the ICompilationUnits
-                                                                CompilationUnit parse = parse(unit);
-//                                                                MethodVisitor visitor = new MethodVisitor();
-//                                                                parse.accept(visitor);
-// 
-//                                                                for (MethodDeclaration method : visitor.getMethods()) {
-//                                                                        System.out.print("Method name: "
-//                                                                                        + method.getName()
-//                                                                                        + " Return type: "
-//                                                                                        + method.getReturnType2());
-//                                                                }  
-                                                                
-                                                            	parse.accept(new ASTVisitor() {
-                                                        			public boolean visit(MethodDeclaration node) {
-                                                        			
-                                                        				System.out.println(node.getName());
-                                                        				
-                                             
-                                                        				return true;
-                                                        			}
-                                                        		});
- 
-                                                        }
-                                                }
- 
-                                        }
-                                }
-                        } catch (CoreException e) {
-                                e.printStackTrace();
-                        }
-                }
-                return null;
-        }
- 
-        /**
-         * Reads a ICompilationUnit and creates the AST DOM for manipulating the
-         * Java source file
-         *
-         * @param unit
-         * @return
-         */
- 
-        private static CompilationUnit parse(ICompilationUnit unit) {
-                ASTParser parser = ASTParser.newParser(AST.getJLSLatest());
-                parser.setKind(ASTParser.K_COMPILATION_UNIT);
-                parser.setSource(unit);
-                parser.setResolveBindings(true);
-                return (CompilationUnit) parser.createAST(null); // parse
-        }
+
+	@Override
+	public Object execute(ExecutionEvent event) throws ExecutionException {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		// Get all projects in the workspace
+		IProject[] projects = root.getProjects();
+		// Loop over all projects
+		for (IProject project : projects) {
+			try {
+				if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
+
+					IPackageFragment[] packages = JavaCore.create(project).getPackageFragments();
+
+					for (IPackageFragment mypackage : packages) {
+						if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
+							for (ICompilationUnit icu : mypackage.getCompilationUnits()) {
+
+								// Now create the AST for the ICompilationUnits
+								CompilationUnit cu = parse(icu);
+
+								MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(cu);
+								System.out.println(visitor.getDocumentationMethods());
+								System.out.println(visitor.getUtilityMethods());
+								System.out.println(visitor.getAllMethodDeclarations().size());
+
+								if (visitor.getAllMethodDeclarations().size() != 0) {
+									// This is should not be hard-coded
+									MethodDeclaration docMethod = visitor.getDocumentationMethods().get(0);
+									MethodDeclaration utilityMethod = visitor.getUtilityMethods().get(1);
+									
+									System.out.println(visitor.locateUtilityCalls(docMethod));
+									
+									// Transform 
+									MethodDeclarationTransformer Transformer = new MethodDeclarationTransformer(icu, cu);
+									
+									// test selections
+									Map<Integer, MethodInvocation> invocations = visitor.locateUtilityCalls(docMethod);
+									// This is should not be hard-coded
+									MethodInvocation node = invocations.get(13);
+//									System.out.println(node.getName());
+									Transformer.inlineMethodInvocation(docMethod, utilityMethod);
+//									Transformer.renameClass();
+									
+								}
+							}
+						}
+					}
+				}
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Reads a ICompilationUnit and creates the AST DOM for manipulating the Java
+	 * source file
+	 *
+	 * @param icu
+	 * @return
+	 */
+
+	private static CompilationUnit parse(ICompilationUnit icu) {
+		ASTParser parser = ASTParser.newParser(AST.getJLSLatest());
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		// parse
+		return (CompilationUnit) parser.createAST(null);
+	}
 }
