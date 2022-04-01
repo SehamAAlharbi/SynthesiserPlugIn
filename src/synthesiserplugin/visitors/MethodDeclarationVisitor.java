@@ -13,12 +13,12 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 
 public class MethodDeclarationVisitor {
-	
+
 	private ArrayList<MethodDeclaration> allMethodDeclarations = new ArrayList<MethodDeclaration>();
 	private ArrayList<MethodDeclaration> utilityMethods = new ArrayList<MethodDeclaration>();
 	private ArrayList<MethodDeclaration> documentationMethods = new ArrayList<MethodDeclaration>();
-	CompilationUnit cu ;
-	
+	CompilationUnit cu;
+
 	public MethodDeclarationVisitor(CompilationUnit cu) {
 		this.cu = cu;
 		this.setUp(cu);
@@ -47,85 +47,79 @@ public class MethodDeclarationVisitor {
 	public void setDocumentationMethods(ArrayList<MethodDeclaration> documentationMethods) {
 		this.documentationMethods = documentationMethods;
 	}
-	
+
 	/**
 	 * locates all documentation and utility methods in each @Param cu
 	 * @param cu of each .java file
 	 */
 	public void setUp(CompilationUnit cu) {
-		
+
 		cu.accept(new ASTVisitor() {
 
 			public boolean visit(MethodDeclaration node) {
-
-				
 				@SuppressWarnings("unchecked")
 				List<ASTNode> modifiers = (List<ASTNode>) node.getStructuralProperty(node.getModifiersProperty());
-				 modifiers.stream().forEach(modifier -> {
-					 if(modifier instanceof Annotation) {
-						 Annotation annotation = (Annotation) modifier;
-						 String typeName = annotation.getTypeName().toString();
-						 if(typeName.equals("Documentation")) {
-							 documentationMethods.add(node);
-							 allMethodDeclarations.add(node);
-						 }
-						 
-						 else if (typeName.equals("Utility")) {
-							 utilityMethods.add(node);
-							 allMethodDeclarations.add(node);
-						 }
-						 
-						 else {
-							 allMethodDeclarations.add(node);
-						 }
-					
-					 }
-				 });
-				
+				modifiers.stream().forEach(modifier -> {
+					if (modifier instanceof Annotation) {
+						Annotation annotation = (Annotation) modifier;
+						String typeName = annotation.getTypeName().toString();
+						if (typeName.equals("Documentation")) {
+							documentationMethods.add(node);
+							allMethodDeclarations.add(node);
+						}
+
+						else if (typeName.equals("Utility")) {
+							utilityMethods.add(node);
+							allMethodDeclarations.add(node);
+						}
+
+						else {
+							allMethodDeclarations.add(node);
+						}
+
+					}
+				});
+
 				return true;
 			}
-			
-			
 		});
-	
 	}
-	
+
 	/**
 	 * 
 	 * @return MethodInvocation nodes inside @param documentationMethod
 	 */
 	public Map<Integer, MethodInvocation> locateUtilityCalls(MethodDeclaration documentationMethod) {
-		
+
 		Map<Integer, MethodInvocation> utilityCalls = new HashMap<Integer, MethodInvocation>();
 		CompilationUnit cUnit = this.cu;
-		
+
 		documentationMethod.accept(new ASTVisitor() {
 			public boolean visit(MethodInvocation node) {
 				utilityMethods.stream().forEach(method -> {
-					if(method.getName().toString().equals(node.getName().toString())) {
+					if (method.getName().toString().equals(node.getName().toString())) {
 						utilityCalls.put(cUnit.getLineNumber(node.getStartPosition()), node);
 					}
 				});
-				
-				
+
 				return true;
 			}
 		});
-		
-		
+
 		return utilityCalls;
 	}
-	
+
 	/**
 	 * 
-	 * @return MethodDeclaration nodes of Utility methods called inside @param documentationMethod
+	 * @return MethodDeclaration nodes of Utility methods called inside @param
+	 *         documentationMethod
 	 */
-	public ArrayList <MethodDeclaration> locateUtilityDeclarations (MethodDeclaration documentationMethod) {
-		
-		ArrayList <MethodDeclaration> utilityDeclarations = new ArrayList <MethodDeclaration> ();
-		
+	public ArrayList<MethodDeclaration> locateUtilityDeclarations(MethodDeclaration documentationMethod) {
+
+		ArrayList<MethodDeclaration> utilityDeclarations = new ArrayList<MethodDeclaration>();
+
 		// loop through calls and utilityMethods filed to get them
-		
+
 		return utilityDeclarations;
 	}
 

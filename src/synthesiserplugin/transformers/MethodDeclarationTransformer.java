@@ -12,11 +12,9 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.InlineMethodDescriptor;
 import org.eclipse.jdt.core.refactoring.descriptors.RenameJavaElementDescriptor;
@@ -30,49 +28,35 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-
-import synthesiserplugin.visitors.MethodDeclarationVisitor;
-
 import org.eclipse.jdt.internal.ui.javaeditor.ASTProvider;
 
-
-
+@SuppressWarnings("restriction")
 public class MethodDeclarationTransformer {
-	
-	ICompilationUnit icu ;
+
+	ICompilationUnit icu;
 	CompilationUnit cu;
-	
-	public MethodDeclarationTransformer (ICompilationUnit icu, CompilationUnit cu) {
+
+	public MethodDeclarationTransformer(ICompilationUnit icu, CompilationUnit cu) {
 		this.icu = icu;
 		this.cu = cu;
 	}
-	
 
 	public ICompilationUnit getIcu() {
 		return this.icu;
 	}
 
-
 	public CompilationUnit getCu() {
 		return this.cu;
 	}
 
-	public void inlineMethodInvocation(MethodDeclaration documentationMethod, MethodDeclaration utilityMethod) throws CoreException {
-
-		// get the start and end position of the utility method invocation to in-line
-		// its body
-		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor (cu);
-		Map<Integer, MethodInvocation> invoctions = visitor.locateUtilityCalls(documentationMethod);
-
-		// this is should not be hard-coded
-		MethodInvocation node = invoctions.get(13);
+	@SuppressWarnings("restriction")
+	public void inlineMethodInvocations(MethodDeclaration documentationMethod, MethodDeclaration utilityMethod)
+			throws CoreException {
 
 		int[] selection = getSelections(utilityMethod);
-			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu,
-					new RefactoringASTParser(ASTProvider.SHARED_AST_LEVEL).parse(icu, true), selection[0],
-					selection[1]);
-
-//		InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, selection[0], selection[1]);
+		@SuppressWarnings("restriction")
+		InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu,
+				new RefactoringASTParser(ASTProvider.SHARED_AST_LEVEL).parse(icu, true), selection[0], selection[1]);
 
 		refactoring.setDeleteSource(true);
 		refactoring.setCurrentMode(Mode.INLINE_ALL); // or INLINE SINGLE based on the user's intervention
@@ -86,6 +70,12 @@ public class MethodDeclarationTransformer {
 		op.run(new NullProgressMonitor());
 	}
 
+	/**
+	 * gets the selections of a MethodDeclaration in source code
+	 * 
+	 * @param node is the to-be-in-lined utility
+	 * @return array of selections
+	 */
 	public int[] getSelections(MethodDeclaration node) {
 
 		int start = node.getStartPosition();
@@ -93,9 +83,8 @@ public class MethodDeclarationTransformer {
 		int[] selections = { start, end };
 		return selections;
 	}
-	
 
-	public void inlineMethodInvocation2() throws CoreException {
+	public void inlineMethodInvocations2() throws CoreException {
 
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		IProject project = root.getProject("Hello");
@@ -111,15 +100,13 @@ public class MethodDeclarationTransformer {
 		Map arguments = new HashMap();
 		// arguments.put("", ""); <-- ???
 		int flags = 0;
-
+		
 		// used when we do not want to use UI classes
 		InlineMethodDescriptor descriptor = new InlineMethodDescriptor(projectName, description, comments, arguments,
 				flags);
-
 		RefactoringStatus status = new RefactoringStatus();
 		try {
 			Refactoring refactoring = descriptor.createRefactoring(status);
-
 			IProgressMonitor monitor = new NullProgressMonitor();
 			refactoring.checkInitialConditions(monitor);
 			refactoring.checkFinalConditions(monitor);
@@ -127,45 +114,37 @@ public class MethodDeclarationTransformer {
 			change.perform(monitor);
 
 		} catch (CoreException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
 
 	/**
-	 * A working method that rename the icu to "New Class"
+	 * rename the icu to a new chosen name
 	 */
 	public void renameClass() {
-
 
 		RefactoringContribution contribution = RefactoringCore
 				.getRefactoringContribution(IJavaRefactorings.RENAME_COMPILATION_UNIT);
 		RenameJavaElementDescriptor descriptor = (RenameJavaElementDescriptor) contribution.createDescriptor();
 		descriptor.setProject(icu.getResource().getProject().getName());
-		descriptor.setNewName("NewClass"); // new name for a Class
+		 // new name for a Class
+		descriptor.setNewName("NewClass");
 		descriptor.setJavaElement(icu);
-
 		RefactoringStatus status = new RefactoringStatus();
 		try {
 			Refactoring refactoring = descriptor.createRefactoring(status);
-
 			IProgressMonitor monitor = new NullProgressMonitor();
 			refactoring.checkInitialConditions(monitor);
 			refactoring.checkFinalConditions(monitor);
 			Change change = refactoring.createChange(monitor);
 			change.perform(monitor);
-
 		} catch (CoreException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-
 }
