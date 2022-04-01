@@ -59,7 +59,7 @@ public class MethodDeclarationTransformer {
 				new RefactoringASTParser(ASTProvider.SHARED_AST_LEVEL).parse(icu, true), selection[0], selection[1]);
 
 		refactoring.setDeleteSource(true);
-		refactoring.setCurrentMode(Mode.INLINE_ALL); // or INLINE SINGLE based on the user's intervention
+		refactoring.setCurrentMode(Mode.INLINE_ALL);
 
 		IProgressMonitor pm = new NullProgressMonitor();
 		RefactoringStatus res = refactoring.checkInitialConditions(pm);
