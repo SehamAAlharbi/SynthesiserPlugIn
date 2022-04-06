@@ -2,6 +2,9 @@ package tests.handlers;
 
 
 
+import org.eclipse.core.internal.resources.Workspace;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.jdt.core.IJavaProject;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -29,6 +32,9 @@ public class ParserTest {
 	
 	@Test
 	public void testParse () {
+		
+		
+//		IJavaProject project = 
 		
 		
 	}
