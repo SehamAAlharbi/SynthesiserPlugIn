@@ -1,13 +1,22 @@
 package synthesiserplugin.transformers;
 
-import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.resources.IProject;		
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;	
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.RenameJavaElementDescriptor;
+// you need to reuse this!
+import org.eclipse.jdt.core.refactoring.descriptors.InlineMethodDescriptor;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring.Mode;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
@@ -20,51 +29,64 @@ import org.eclipse.ltk.core.refactoring.RefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import synthesiserplugin.visitors.MethodDeclarationVisitor;
+
 @SuppressWarnings("restriction")
 public class MethodDeclarationTransformer {
 
-	ICompilationUnit icu;
-	CompilationUnit cu;
+	private ICompilationUnit icu;
+	private CompilationUnit cu;
 
 	public MethodDeclarationTransformer(ICompilationUnit icu, CompilationUnit cu) {
 		this.icu = icu;
 		this.cu = cu;
 	}
-
-	public ICompilationUnit getIcu() {
-		return this.icu;
-	}
-
-	public CompilationUnit getCu() {
-		return this.cu;
+	
+	/**
+	 * 
+	 * @param name of utility method to be in-lined where it is called
+	 * @throws CoreException 
+	 */
+	public void inlineMethodByName(String name) {
+		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(this.cu);
+		if (visitor.isUtilityMethod(name)) {
+			MethodDeclaration method = visitor.getMethodByName(name);
+			if (method!=null) {
+			inlineMethod(method);
+			}
+		}
 	}
 
 	@SuppressWarnings("restriction")
-	public void inlineMethodInvocations(MethodDeclaration documentationMethod, MethodDeclaration utilityMethod)
-			throws CoreException {
+	public void inlineMethod(MethodDeclaration utilityMethod) {
 
 		int[] selection = getSelections(utilityMethod);
 		@SuppressWarnings("restriction")
-		InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu,
-				new RefactoringASTParser(ASTProvider.SHARED_AST_LEVEL).parse(icu, true), selection[0], selection[1]);
+		InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, selection[0], selection[1]);
 
 		refactoring.setDeleteSource(true);
-		refactoring.setCurrentMode(Mode.INLINE_ALL);
+		try {
+			refactoring.setCurrentMode(Mode.INLINE_ALL);
+			IProgressMonitor pm = new NullProgressMonitor();
+			RefactoringStatus res = refactoring.checkInitialConditions(pm);
+			res = refactoring.checkFinalConditions(pm);
 
-		IProgressMonitor pm = new NullProgressMonitor();
-		RefactoringStatus res = refactoring.checkInitialConditions(pm);
-		res = refactoring.checkFinalConditions(pm);
+			final PerformRefactoringOperation op = new PerformRefactoringOperation(refactoring,
+					CheckConditionsOperation.ALL_CONDITIONS);
+			op.run(new NullProgressMonitor());
 
-		final PerformRefactoringOperation op = new PerformRefactoringOperation(refactoring,
-				CheckConditionsOperation.ALL_CONDITIONS);
-		op.run(new NullProgressMonitor());
+		} catch (JavaModelException e) {
+			e.printStackTrace();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
 	 * gets the selections of a MethodDeclaration in source code
 	 * 
 	 * @param node is the to-be-in-lined utility
-	 * @return array of selections
+	 * @return array of selections, body of utility method
 	 */
 	public int[] getSelections(MethodDeclaration node) {
 
@@ -73,9 +95,48 @@ public class MethodDeclarationTransformer {
 		int[] selections = { start, end };
 		return selections;
 	}
+	
+	/**
+	 * try in-lining using non-internal classes
+	 */
+	public void inlineUsingContribution () throws CoreException {
+		// 1. Get ICompiationUnit for type "smcho.Hello"
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IProject project = root.getProject("Hello");
+		project.open(null /* IProgressMonitor */);
+
+		IJavaProject javaProject = JavaCore.create(project);
+		IType itype = javaProject.findType("smcho.Hello");
+		ICompilationUnit icu = itype.getCompilationUnit();
+
+		// 2. Contribution and Description creation
+		RefactoringContribution contribution = RefactoringCore.getRefactoringContribution(IJavaRefactorings.INLINE_METHOD);
+		InlineMethodDescriptor descriptor = (InlineMethodDescriptor) contribution.createDescriptor();
+
+		descriptor.setProject(icu.getResource().getProject().getName( ));
+
+		// 3. executing the refactoring
+		RefactoringStatus status = new RefactoringStatus();
+		try {
+		    Refactoring refactoring = descriptor.createRefactoring(status);
+
+		    IProgressMonitor monitor = new NullProgressMonitor();
+		    refactoring.checkInitialConditions(monitor);
+		    refactoring.checkFinalConditions(monitor);
+		    
+		    Change change = refactoring.createChange(monitor);
+		    change.perform(monitor);
+		} catch (CoreException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		} catch (Exception e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+	}
 
 	/**
-	 * rename the icu to a new chosen name
+	 * rename the icu to a new chosen name, does not use internal packages, you can use it to inline methods as well, try IJavaRefactorings.INLINE_METHO
 	 */
 	public void renameClass() {
 
@@ -83,6 +144,8 @@ public class MethodDeclarationTransformer {
 				.getRefactoringContribution(IJavaRefactorings.RENAME_COMPILATION_UNIT);
 		RenameJavaElementDescriptor descriptor = (RenameJavaElementDescriptor) contribution.createDescriptor();
 		descriptor.setProject(icu.getResource().getProject().getName());
+		
+		
 		 // new name for a Class
 		descriptor.setNewName("NewClass");
 		descriptor.setJavaElement(icu);

@@ -1,6 +1,6 @@
 package synthesiserplugin.visitors;
 
-import java.util.ArrayList;
+import java.util.ArrayList;	
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,16 +12,28 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 
-public class MethodDeclarationVisitor {
+public class MethodDeclarationVisitor  {
 
-	private ArrayList<MethodDeclaration> allMethodDeclarations = new ArrayList<MethodDeclaration>();
-	private ArrayList<MethodDeclaration> utilityMethods = new ArrayList<MethodDeclaration>();
-	private ArrayList<MethodDeclaration> documentationMethods = new ArrayList<MethodDeclaration>();
-	CompilationUnit cu;
+	private CompilationUnit cu;
+	private ArrayList<MethodDeclaration> allMethodDeclarations;
+	private ArrayList<MethodDeclaration> utilityMethods;
+	private ArrayList<MethodDeclaration> documentationMethods;
 
 	public MethodDeclarationVisitor(CompilationUnit cu) {
 		this.cu = cu;
-		this.setUp(cu);
+		this.allMethodDeclarations = new ArrayList<MethodDeclaration>();
+		this.utilityMethods = new ArrayList<MethodDeclaration>();
+		this.documentationMethods = new ArrayList<MethodDeclaration>();
+
+		visitCU();
+	}
+	
+	public CompilationUnit getCu() {
+		return cu;
+	}
+
+	public void setCu(CompilationUnit cu) {
+		this.cu = cu;
 	}
 
 	public ArrayList<MethodDeclaration> getAllMethodDeclarations() {
@@ -49,12 +61,12 @@ public class MethodDeclarationVisitor {
 	}
 
 	/**
-	 * locates all documentation and utility methods in each @Param cu
-	 * @param cu of each .java file
+	 * finds all MethodDeclarations in this.cu and specify all documentation and
+	 * utility methods
 	 */
-	public void setUp(CompilationUnit cu) {
-
-		cu.accept(new ASTVisitor() {
+	public void visitCU() {
+		
+		this.cu.accept(new ASTVisitor() {
 
 			public boolean visit(MethodDeclaration node) {
 				@SuppressWarnings("unchecked")
@@ -87,7 +99,8 @@ public class MethodDeclarationVisitor {
 
 	/**
 	 * 
-	 * @return MethodInvocation nodes inside @param documentationMethod
+	 * @return MethodInvocation nodes of Utility methods called inside @param
+	 *         documentationMethod
 	 */
 	public Map<Integer, MethodInvocation> locateUtilityCalls(MethodDeclaration documentationMethod) {
 
@@ -113,14 +126,56 @@ public class MethodDeclarationVisitor {
 	 * 
 	 * @return MethodDeclaration nodes of Utility methods called inside @param
 	 *         documentationMethod
+	 * 
 	 */
-	public ArrayList<MethodDeclaration> locateUtilityDeclarations(MethodDeclaration documentationMethod) {
+	public ArrayList<MethodDeclaration> getUtilityDeclarations(MethodDeclaration documentationMethod) {
 
 		ArrayList<MethodDeclaration> utilityDeclarations = new ArrayList<MethodDeclaration>();
 
-		// loop through calls and utilityMethods filed to get them
+		// 1. get the calls in this MethodDeclaration
+		Map<Integer, MethodInvocation> utilityCalls = locateUtilityCalls(documentationMethod);
+		// 2. stream over the MethodInvocations inside the received documentation method
+		utilityCalls.entrySet().stream().forEach(e -> {
+			// 3. find utility declarations using name search
+			utilityMethods.stream().forEach(method -> {
+				if (method.getName().toString().equals(e.getValue().getName().toString())) {
+					utilityDeclarations.add(method);
+				}
+			});
+		});
 
 		return utilityDeclarations;
+	}
+
+	public boolean isUtilityMethod(String methodName) {
+		return findUtilityMethodByName(methodName);
+	}
+
+	public boolean isDocummentionMethod(String methodName) {
+		return findDocumentationMethodByName(methodName);
+	}
+	
+	public MethodDeclaration getMethodByName (String methodName) {
+		MethodDeclaration method = this.allMethodDeclarations.stream().filter(md -> md.getName().toString().equals(methodName)).findAny().orElse(null);
+		return method;
+	}
+
+	private boolean findUtilityMethodByName(String methodName) {
+		ArrayList<String> names = new ArrayList<String>();
+		this.utilityMethods.stream().forEach(method -> {
+			names.add(method.getName().toString());
+		});
+
+		return names.contains(methodName);
+	}
+
+	private boolean findDocumentationMethodByName(String methodName) {
+		ArrayList<String> names = new ArrayList<String>();
+		this.documentationMethods.stream().forEach(method -> {
+			names.add(method.getName().toString());
+		});
+
+		return names.contains(methodName);
 	}
 
 }

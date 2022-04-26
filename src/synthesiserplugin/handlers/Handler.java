@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;
+import org.eclipse.core.commands.AbstractHandler;			
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
@@ -9,6 +9,7 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
@@ -17,46 +18,47 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
+import synthesiser.models.JavaProject;
 import synthesiserplugin.transformers.MethodDeclarationTransformer;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
-public class Parser extends AbstractHandler {
+public class Handler extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IWorkspaceRoot root = workspace.getRoot();
-		// Get all projects in the workspace
+		// get all projects in the workspace
 		IProject[] projects = root.getProjects();
-		// Loop over all projects
+		// loop over all projects
 		for (IProject project : projects) {
 			try {
 				if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
-					IPackageFragment[] packages = JavaCore.create(project).getPackageFragments();
-					for (IPackageFragment mypackage : packages) {
-						if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
-							for (ICompilationUnit icu : mypackage.getCompilationUnits()) {
-								// Now create the AST for the ICompilationUnits
-								CompilationUnit cu = parse(icu);
-								MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(cu);
-								if (visitor.getAllMethodDeclarations().size() != 0) {
-									// This is should not be hard-coded
-									MethodDeclaration docMethod = visitor.getDocumentationMethods().get(0);
-									MethodDeclaration utilityMethod = visitor.getUtilityMethods().get(0);
-									// Transform
-									MethodDeclarationTransformer Transformer = new MethodDeclarationTransformer(icu,cu);
-									Transformer.inlineMethodInvocations(docMethod, utilityMethod);
-//									Transformer.renameClass();
+					IJavaProject jProject = JavaCore.create(project);
+					// create a model
+					JavaProject javaProject = new JavaProject(jProject);
+					javaProject.getiCompilationUnits().forEach(icu -> {
 
-								}
-							}
+					CompilationUnit cu = javaProject.getParsedVersion(icu);
+					MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(cu);
+					
+					if (visitor.getAllMethodDeclarations().size() != 0) {
+						// This is should not be hard-coded
+						MethodDeclaration utilityMethod = visitor.getMethodByName("show");
+							// Transform
+							MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(icu, cu);
+							//	transformer.inlineMethodInvocations(utilityMethod);
+							transformer.inlineMethod(utilityMethod);
+						
 						}
-					}
+					});
 				}
+
 			} catch (CoreException e) {
 				e.printStackTrace();
 			}
 		}
+
 		return null;
 	}
 
