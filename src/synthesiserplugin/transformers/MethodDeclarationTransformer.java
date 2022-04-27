@@ -60,25 +60,32 @@ public class MethodDeclarationTransformer {
 	@SuppressWarnings("restriction")
 	public void inlineMethod(MethodDeclaration utilityMethod) {
 
-		int[] selection = getSelections(utilityMethod);
-		@SuppressWarnings("restriction")
-		InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, selection[0], selection[1]);
+		if (utilityMethod == null) {
+			throw new IllegalArgumentException("Utility Method is Null!");
+		}
 
-		refactoring.setDeleteSource(true);
-		try {
-			refactoring.setCurrentMode(Mode.INLINE_ALL);
-			IProgressMonitor pm = new NullProgressMonitor();
-			RefactoringStatus res = refactoring.checkInitialConditions(pm);
-			res = refactoring.checkFinalConditions(pm);
+		else {
 
-			final PerformRefactoringOperation op = new PerformRefactoringOperation(refactoring,
-					CheckConditionsOperation.ALL_CONDITIONS);
-			op.run(new NullProgressMonitor());
+			int[] selection = getSelections(utilityMethod);
+			@SuppressWarnings("restriction")
+			InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, selection[0], selection[1]);
 
-		} catch (JavaModelException e) {
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
+			refactoring.setDeleteSource(true);
+			try {
+				refactoring.setCurrentMode(Mode.INLINE_ALL);
+				IProgressMonitor pm = new NullProgressMonitor();
+				RefactoringStatus res = refactoring.checkInitialConditions(pm);
+				res = refactoring.checkFinalConditions(pm);
+
+				final PerformRefactoringOperation op = new PerformRefactoringOperation(refactoring,
+						CheckConditionsOperation.ALL_CONDITIONS);
+				op.run(new NullProgressMonitor());
+
+			} catch (JavaModelException e) {
+				e.printStackTrace();
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

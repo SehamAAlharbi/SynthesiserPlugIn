@@ -1,6 +1,6 @@
 package synthesiserplugin.visitors;
 
-import java.util.ArrayList;	
+import java.util.ArrayList;		
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,9 +66,11 @@ public class MethodDeclarationVisitor  {
 	 */
 	public void visitCU() {
 		
-		this.cu.accept(new ASTVisitor() {
+		cu.accept(new ASTVisitor() {
 
 			public boolean visit(MethodDeclaration node) {
+				allMethodDeclarations.add(node);
+				
 				@SuppressWarnings("unchecked")
 				List<ASTNode> modifiers = (List<ASTNode>) node.getStructuralProperty(node.getModifiersProperty());
 				modifiers.stream().forEach(modifier -> {
@@ -77,18 +79,11 @@ public class MethodDeclarationVisitor  {
 						String typeName = annotation.getTypeName().toString();
 						if (typeName.equals("Documentation")) {
 							documentationMethods.add(node);
-							allMethodDeclarations.add(node);
 						}
 
 						else if (typeName.equals("Utility")) {
 							utilityMethods.add(node);
-							allMethodDeclarations.add(node);
 						}
-
-						else {
-							allMethodDeclarations.add(node);
-						}
-
 					}
 				});
 

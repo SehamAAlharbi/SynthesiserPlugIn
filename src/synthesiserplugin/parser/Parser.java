@@ -1,4 +1,4 @@
-package synthesiser.parser;
+package synthesiserplugin.parser;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.AST;

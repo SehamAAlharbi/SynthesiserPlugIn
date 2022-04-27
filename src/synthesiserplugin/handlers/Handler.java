@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;			
+import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
@@ -10,15 +10,11 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
-import synthesiser.models.JavaProject;
+import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.transformers.MethodDeclarationTransformer;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
@@ -32,26 +28,43 @@ public class Handler extends AbstractHandler {
 		IProject[] projects = root.getProjects();
 		// loop over all projects
 		for (IProject project : projects) {
+
 			try {
-				if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
+
+				// get the project you need to work with
+				if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")
+						&& project.getName().toString().equals("EpsilonProject")) {
 					IJavaProject jProject = JavaCore.create(project);
 					// create a model
 					JavaProject javaProject = new JavaProject(jProject);
-					javaProject.getiCompilationUnits().forEach(icu -> {
 
+					System.out.println(javaProject.getCompilationUnits().size());
+					System.out.println(javaProject.getPackages().size());
+
+//					javaProject.getiCompilationUnits().forEach(icu -> {
+
+//					System.out.println(icu.getElementName());
+
+					ICompilationUnit icu = javaProject.getiCompilationUnits().get(0);
 					CompilationUnit cu = javaProject.getParsedVersion(icu);
+//					System.out.println(cu.toString());
 					MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(cu);
-					
-					if (visitor.getAllMethodDeclarations().size() != 0) {
-						// This is should not be hard-coded
-						MethodDeclaration utilityMethod = visitor.getMethodByName("show");
-							// Transform
-							MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(icu, cu);
-							//	transformer.inlineMethodInvocations(utilityMethod);
-							transformer.inlineMethod(utilityMethod);
-						
-						}
+
+					visitor.getAllMethodDeclarations().stream().forEach(md -> {
+						System.out.println(md.getName().toString());
 					});
+
+					System.out.println(visitor.getDocumentationMethods().size());
+					System.out.println(visitor.getUtilityMethods().size());
+
+					if (visitor.getDocumentationMethods().size() != 0) {
+		
+						// Transform
+						MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(icu, cu);
+						// transformer.inlineMethodInvocations(utilityMethod);
+						transformer.inlineMethodByName("execute");
+
+					}
 				}
 
 			} catch (CoreException e) {
@@ -60,19 +73,6 @@ public class Handler extends AbstractHandler {
 		}
 
 		return null;
-	}
 
-	/**
-	 * Reads a ICompilationUnit and creates the AST DOM for manipulating the Java source file
-	 * @param icu
-	 * @return
-	 */
-	private static CompilationUnit parse(ICompilationUnit icu) {
-		ASTParser parser = ASTParser.newParser(AST.getJLSLatest());
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setSource(icu);
-		parser.setResolveBindings(true);
-		// parse
-		return (CompilationUnit) parser.createAST(null);
 	}
 }

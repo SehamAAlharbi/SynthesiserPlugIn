@@ -1,4 +1,4 @@
-package synthesiser.models;
+package synthesiserplugin.models;
 
 import java.util.ArrayList;	
 
@@ -11,7 +11,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
-import synthesiser.parser.Parser;
+import synthesiserplugin.parser.Parser;
 
 public class JavaProject {
 
