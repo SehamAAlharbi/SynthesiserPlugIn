@@ -1,6 +1,8 @@
 package synthesiserplugin.transformers;
 
-import org.eclipse.core.resources.IProject;		
+import java.util.Map;
+
+import org.eclipse.core.resources.IProject;			
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;	
@@ -34,12 +36,8 @@ import synthesiserplugin.visitors.MethodDeclarationVisitor;
 @SuppressWarnings("restriction")
 public class MethodDeclarationTransformer {
 
-	private ICompilationUnit icu;
-	private CompilationUnit cu;
+	public MethodDeclarationTransformer() {
 
-	public MethodDeclarationTransformer(ICompilationUnit icu, CompilationUnit cu) {
-		this.icu = icu;
-		this.cu = cu;
 	}
 	
 	/**
@@ -48,17 +46,21 @@ public class MethodDeclarationTransformer {
 	 * @throws CoreException 
 	 */
 	public void inlineMethodByName(String name) {
-		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(this.cu);
+		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(this.icu);
 		if (visitor.isUtilityMethod(name)) {
 			MethodDeclaration method = visitor.getMethodByName(name);
-			if (method!=null) {
-			inlineMethod(method);
-			}
+			ICompilationUnit icu = visitor.getUtilityMap().entrySet().stream()
+					.filter(e -> e.getKey().getName().toString().equals(name))
+					.map(Map.Entry::getValue)
+					.findFirst()
+					.orElse(null);
+			CompilationUnit cu = visitor.getParsedVersion(icu);
+			inlineMethod(icu,cu, method);
 		}
 	}
 
 	@SuppressWarnings("restriction")
-	public void inlineMethod(MethodDeclaration utilityMethod) {
+	public void inlineMethod(ICompilationUnit icu, CompilationUnit cu , MethodDeclaration utilityMethod) {
 
 		if (utilityMethod == null) {
 			throw new IllegalArgumentException("Utility Method is Null!");
@@ -143,7 +145,7 @@ public class MethodDeclarationTransformer {
 	}
 
 	/**
-	 * rename the icu to a new chosen name, does not use internal packages, you can use it to inline methods as well, try IJavaRefactorings.INLINE_METHO
+	 * rename the icu to a new chosen name, does not use internal packages, you can use it to in-line methods as well, try IJavaRefactorings.INLINE_METHO
 	 */
 	public void renameClass() {
 
@@ -151,7 +153,6 @@ public class MethodDeclarationTransformer {
 				.getRefactoringContribution(IJavaRefactorings.RENAME_COMPILATION_UNIT);
 		RenameJavaElementDescriptor descriptor = (RenameJavaElementDescriptor) contribution.createDescriptor();
 		descriptor.setProject(icu.getResource().getProject().getName());
-		
 		
 		 // new name for a Class
 		descriptor.setNewName("NewClass");

@@ -1,10 +1,11 @@
 package synthesiserplugin.visitors;
 
-import java.util.ArrayList;		
+import java.util.ArrayList;			
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -12,22 +13,36 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 
+import synthesiserplugin.parser.Parser;
+
 public class MethodDeclarationVisitor  {
 
+	ICompilationUnit icu;
 	private CompilationUnit cu;
 	private ArrayList<MethodDeclaration> allMethodDeclarations;
 	private ArrayList<MethodDeclaration> utilityMethods;
+	private Map <MethodDeclaration , ICompilationUnit>  utilityMap ;
 	private ArrayList<MethodDeclaration> documentationMethods;
 
-	public MethodDeclarationVisitor(CompilationUnit cu) {
-		this.cu = cu;
+	public MethodDeclarationVisitor(ICompilationUnit icu) {
+		this.icu = icu;
+		this.cu = getParsedVersion(icu);
 		this.allMethodDeclarations = new ArrayList<MethodDeclaration>();
 		this.utilityMethods = new ArrayList<MethodDeclaration>();
+		this.utilityMap = new HashMap<>();
 		this.documentationMethods = new ArrayList<MethodDeclaration>();
 
 		visitCU();
 	}
 	
+	public ICompilationUnit getIcu() {
+		return icu;
+	}
+
+	public void setIcu(ICompilationUnit icu) {
+		this.icu = icu;
+	}
+
 	public CompilationUnit getCu() {
 		return cu;
 	}
@@ -52,6 +67,14 @@ public class MethodDeclarationVisitor  {
 		this.utilityMethods = utilityMethods;
 	}
 
+	public Map<MethodDeclaration, ICompilationUnit> getUtilityMap() {
+		return utilityMap;
+	}
+
+	public void setUtilityMap(Map<MethodDeclaration, ICompilationUnit> utilityMap) {
+		this.utilityMap = utilityMap;
+	}
+
 	public ArrayList<MethodDeclaration> getDocumentationMethods() {
 		return documentationMethods;
 	}
@@ -66,7 +89,7 @@ public class MethodDeclarationVisitor  {
 	 */
 	public void visitCU() {
 		
-		cu.accept(new ASTVisitor() {
+		this.cu.accept(new ASTVisitor() {
 
 			public boolean visit(MethodDeclaration node) {
 				allMethodDeclarations.add(node);
@@ -83,6 +106,7 @@ public class MethodDeclarationVisitor  {
 
 						else if (typeName.equals("Utility")) {
 							utilityMethods.add(node);
+							utilityMap.put(node, icu);
 						}
 					}
 				});
@@ -90,6 +114,11 @@ public class MethodDeclarationVisitor  {
 				return true;
 			}
 		});
+	}
+	
+	public CompilationUnit getParsedVersion(ICompilationUnit icu) {
+		Parser parser = new Parser();
+		return parser.parse(icu);
 	}
 
 	/**

@@ -43,28 +43,23 @@ public class Handler extends AbstractHandler {
 
 //					javaProject.getiCompilationUnits().forEach(icu -> {
 
-//					System.out.println(icu.getElementName());
-
 					ICompilationUnit icu = javaProject.getiCompilationUnits().get(0);
-					CompilationUnit cu = javaProject.getParsedVersion(icu);
-//					System.out.println(cu.toString());
-					MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(cu);
+//					CompilationUnit cu = javaProject.getParsedVersion(icu);
 
-					visitor.getAllMethodDeclarations().stream().forEach(md -> {
-						System.out.println(md.getName().toString());
-					});
+					MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
+
+//					visitor.getAllMethodDeclarations().stream().forEach(md -> {
+//						System.out.println(md.getName().toString());
+//					});
 
 					System.out.println(visitor.getDocumentationMethods().size());
 					System.out.println(visitor.getUtilityMethods().size());
 
-					if (visitor.getDocumentationMethods().size() != 0) {
-		
-						// Transform
-						MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(icu, cu);
-						// transformer.inlineMethodInvocations(utilityMethod);
-						transformer.inlineMethodByName("execute");
+					// Transform
+					MethodDeclarationTransformer transformer = new MethodDeclarationTransformer();
+//						transformer.inlineMethod(utilityMethod);
+					transformer.inlineMethodByName("execute");
 
-					}
 				}
 
 			} catch (CoreException e) {

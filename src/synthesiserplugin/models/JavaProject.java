@@ -89,11 +89,6 @@ public class JavaProject {
 	public void setCompilationUnits(ArrayList<CompilationUnit> compilationUnits) {
 		this.compilationUnits = compilationUnits;
 	}
-	
-	public CompilationUnit getParsedVersion(ICompilationUnit icu) {
-		Parser parser = new Parser();
-		return parser.parse(icu);
-	}
 
 	@Override
 	public String toString() {
