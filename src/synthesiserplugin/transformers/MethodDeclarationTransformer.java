@@ -2,10 +2,10 @@ package synthesiserplugin.transformers;
 
 import java.util.Map;
 
-import org.eclipse.core.resources.IProject;			
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;	
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -16,13 +16,11 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
-import org.eclipse.jdt.core.refactoring.descriptors.RenameJavaElementDescriptor;
 // you need to reuse this!
 import org.eclipse.jdt.core.refactoring.descriptors.InlineMethodDescriptor;
+import org.eclipse.jdt.core.refactoring.descriptors.RenameJavaElementDescriptor;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring;
 import org.eclipse.jdt.internal.corext.refactoring.code.InlineMethodRefactoring.Mode;
-import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
-import org.eclipse.jdt.internal.ui.javaeditor.ASTProvider;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
 import org.eclipse.ltk.core.refactoring.PerformRefactoringOperation;
@@ -31,13 +29,16 @@ import org.eclipse.ltk.core.refactoring.RefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
 @SuppressWarnings("restriction")
 public class MethodDeclarationTransformer {
+	
+	private JavaProject javaProject;
 
-	public MethodDeclarationTransformer() {
-
+	public MethodDeclarationTransformer(JavaProject javaProject) {
+		this.javaProject = javaProject;
 	}
 	
 	/**
@@ -46,17 +47,21 @@ public class MethodDeclarationTransformer {
 	 * @throws CoreException 
 	 */
 	public void inlineMethodByName(String name) {
-		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(this.icu);
-		if (visitor.isUtilityMethod(name)) {
-			MethodDeclaration method = visitor.getMethodByName(name);
-			ICompilationUnit icu = visitor.getUtilityMap().entrySet().stream()
+		
+		this.javaProject.getiCompilationUnits().forEach(icu -> {
+		ICompilationUnit iCompilationUnit = new MethodDeclarationVisitor(icu).getUtilityMap().entrySet().stream()
 					.filter(e -> e.getKey().getName().toString().equals(name))
 					.map(Map.Entry::getValue)
 					.findFirst()
 					.orElse(null);
-			CompilationUnit cu = visitor.getParsedVersion(icu);
-			inlineMethod(icu,cu, method);
+		if (iCompilationUnit !=null) {
+			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(iCompilationUnit);
+			CompilationUnit compilationUnit = visitor.getParsedVersion(iCompilationUnit);
+			MethodDeclaration method = visitor.getMethodByName(name);
+			inlineMethod(iCompilationUnit, compilationUnit, method);
 		}
+		});
+		
 	}
 
 	@SuppressWarnings("restriction")
@@ -135,6 +140,7 @@ public class MethodDeclarationTransformer {
 		    
 		    Change change = refactoring.createChange(monitor);
 		    change.perform(monitor);
+		    
 		} catch (CoreException e) {
 		    // TODO Auto-generated catch block
 		    e.printStackTrace();
@@ -152,11 +158,11 @@ public class MethodDeclarationTransformer {
 		RefactoringContribution contribution = RefactoringCore
 				.getRefactoringContribution(IJavaRefactorings.RENAME_COMPILATION_UNIT);
 		RenameJavaElementDescriptor descriptor = (RenameJavaElementDescriptor) contribution.createDescriptor();
-		descriptor.setProject(icu.getResource().getProject().getName());
+//		descriptor.setProject(icu.getResource().getProject().getName());
 		
 		 // new name for a Class
 		descriptor.setNewName("NewClass");
-		descriptor.setJavaElement(icu);
+//		descriptor.setJavaElement(icu);
 		RefactoringStatus status = new RefactoringStatus();
 		try {
 			Refactoring refactoring = descriptor.createRefactoring(status);
