@@ -1,6 +1,7 @@
 package synthesiserplugin.visitors;
 
-import java.util.ArrayList;				
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,18 +11,19 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 
 import synthesiserplugin.parser.Parser;
 
-public class MethodDeclarationVisitor  {
+public class MethodDeclarationVisitor {
 
 	ICompilationUnit icu;
 	private CompilationUnit cu;
 	private ArrayList<MethodDeclaration> allMethodDeclarations;
 	private ArrayList<MethodDeclaration> utilityMethods;
-	private Map <MethodDeclaration , ICompilationUnit>  utilityMap ;
+	private Map<MethodDeclaration, ICompilationUnit> utilityMap;
 	private ArrayList<MethodDeclaration> documentationMethods;
 
 	public MethodDeclarationVisitor(ICompilationUnit icu) {
@@ -34,7 +36,7 @@ public class MethodDeclarationVisitor  {
 
 		visitCU();
 	}
-	
+
 	public ICompilationUnit getIcu() {
 		return icu;
 	}
@@ -88,12 +90,12 @@ public class MethodDeclarationVisitor  {
 	 * utility methods
 	 */
 	public void visitCU() {
-		
+
 		this.cu.accept(new ASTVisitor() {
 
 			public boolean visit(MethodDeclaration node) {
 				allMethodDeclarations.add(node);
-				
+
 				@SuppressWarnings("unchecked")
 				List<ASTNode> modifiers = (List<ASTNode>) node.getStructuralProperty(node.getModifiersProperty());
 				modifiers.stream().forEach(modifier -> {
@@ -115,7 +117,7 @@ public class MethodDeclarationVisitor  {
 			}
 		});
 	}
-	
+
 	public CompilationUnit getParsedVersion(ICompilationUnit icu) {
 		Parser parser = new Parser();
 		return parser.parse(icu);
@@ -126,7 +128,7 @@ public class MethodDeclarationVisitor  {
 	 * @return MethodInvocation nodes of Utility methods called inside @param
 	 *         documentationMethod
 	 */
-	public Map<Integer, MethodInvocation> locateUtilityCalls(MethodDeclaration documentationMethod) {
+	private Map<Integer, MethodInvocation> locateUtilityCalls(MethodDeclaration documentationMethod) {
 
 		Map<Integer, MethodInvocation> utilityCalls = new HashMap<Integer, MethodInvocation>();
 		CompilationUnit cUnit = this.cu;
@@ -148,8 +150,8 @@ public class MethodDeclarationVisitor  {
 
 	/**
 	 * 
-	 * @return MethodDeclaration nodes of Utility methods called inside @param
-	 *         documentationMethod
+	 * @return list of MethodDeclaration nodes of Utility methods called
+	 *         inside @param documentationMethod
 	 * 
 	 */
 	public ArrayList<MethodDeclaration> getUtilityDeclarations(MethodDeclaration documentationMethod) {
@@ -171,6 +173,46 @@ public class MethodDeclarationVisitor  {
 		return utilityDeclarations;
 	}
 
+	/**
+	 * 
+	 * @param documentationMethod is the doc method to find utility calls in it
+	 * @return a list of MethodInvocation nodes in it
+	 */
+	public ArrayList<MethodInvocation> getUtilityInvocations(MethodDeclaration documentationMethod) {
+
+		ArrayList<MethodInvocation> utilityInvocations = new ArrayList<MethodInvocation>();
+
+		documentationMethod.accept(new ASTVisitor() {
+			public boolean visit(MethodInvocation node) {
+
+				// check whether this invocation is ( of / binding to ) a utility method
+				IMethodBinding iMethod = (IMethodBinding) node.resolveMethodBinding();
+				if (iMethod != null && isUtilityBinding(iMethod)) {
+					utilityInvocations.add(node);
+				}
+
+				return true;
+			}
+		});
+
+		return utilityInvocations;
+
+	}
+
+	private boolean isUtilityBinding(IMethodBinding iMethod) {
+
+		boolean isUtility = false;
+		if (iMethod.getAnnotations().length != 0) {
+			String annotations = Arrays.toString(iMethod.getAnnotations());
+			if (annotations.contains("@Utility()")) {
+				isUtility = true;
+			}
+		}
+
+		return isUtility;
+
+	}
+
 	public boolean isUtilityMethod(String methodName) {
 		return findUtilityMethodByName(methodName);
 	}
@@ -178,9 +220,10 @@ public class MethodDeclarationVisitor  {
 	public boolean isDocummentionMethod(String methodName) {
 		return findDocumentationMethodByName(methodName);
 	}
-	
-	public MethodDeclaration getMethodByName (String methodName) {
-		MethodDeclaration method = this.allMethodDeclarations.stream().filter(md -> md.getName().toString().equals(methodName)).findAny().orElse(null);
+
+	public MethodDeclaration getMethodByName(String methodName) {
+		MethodDeclaration method = this.allMethodDeclarations.stream()
+				.filter(md -> md.getName().toString().equals(methodName)).findAny().orElse(null);
 		return method;
 	}
 

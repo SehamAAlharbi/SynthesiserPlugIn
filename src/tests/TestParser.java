@@ -1,4 +1,4 @@
-package tests.parser;
+package tests;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -10,7 +10,7 @@ import synthesiserplugin.handlers.Handler;
 
 public class TestParser {
 
-	Handler parser;
+	Handler handler;
 
 	@BeforeClass
 	public static void setUpClass() {
@@ -19,7 +19,7 @@ public class TestParser {
 
 	@Before
 	public void setUp() {
-		parser = new Handler();
+		handler = new Handler();
 
 	}
 

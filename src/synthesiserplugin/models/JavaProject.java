@@ -1,6 +1,6 @@
 package synthesiserplugin.models;
 
-import java.util.ArrayList;	
+import java.util.ArrayList;			
 
 import java.util.Arrays;
 
