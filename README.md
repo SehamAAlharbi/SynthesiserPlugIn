@@ -2,7 +2,7 @@
 Generates linear API code examples from java input classes
 
 # Example
-Let's say we have a class with a method annotated with ` @Docummention ` as given below:
+Let's say we have the following class that has a method annotated with ` @Docummention ` which contains invocations of other methods annotated with `@Utility` :
 
 	public class JFrameExample extends Printer{
 		
