@@ -96,6 +96,5 @@ public class JavaProject {
 				+ packages + ", iCompilationUnits=" + iCompilationUnits + ", compilationUnits="
 				+ compilationUnits + "]";
 	}
-	
 
 }

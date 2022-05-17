@@ -1,6 +1,6 @@
 package synthesiserplugin.visitors;
 
-import java.util.ArrayList;
+import java.util.ArrayList;	
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -182,24 +182,28 @@ public class MethodDeclarationVisitor {
 
 		ArrayList<MethodInvocation> utilityInvocations = new ArrayList<MethodInvocation>();
 
-		documentationMethod.accept(new ASTVisitor() {
-			public boolean visit(MethodInvocation node) {
+		if (documentationMethod == null) {
+			return utilityInvocations;
+		} else {
+			documentationMethod.accept(new ASTVisitor() {
+				public boolean visit(MethodInvocation node) {
 
-				// check whether this invocation is ( of / binding to ) a utility method
-				IMethodBinding iMethod = (IMethodBinding) node.resolveMethodBinding();
-				if (iMethod != null && isUtilityBinding(iMethod)) {
-					utilityInvocations.add(node);
+					// check whether this invocation is ( of / binding to ) a utility method
+					IMethodBinding iMethod = (IMethodBinding) node.resolveMethodBinding();
+					if (iMethod != null && isUtilityBinding(iMethod)) {
+						utilityInvocations.add(node);
+					}
+
+					return true;
 				}
-
-				return true;
-			}
-		});
+			});
+		}
 
 		return utilityInvocations;
 
 	}
 
-	private boolean isUtilityBinding(IMethodBinding iMethod) {
+	public boolean isUtilityBinding(IMethodBinding iMethod) {
 
 		boolean isUtility = false;
 		if (iMethod.getAnnotations().length != 0) {
@@ -210,7 +214,7 @@ public class MethodDeclarationVisitor {
 		}
 
 		return isUtility;
-
+		
 	}
 
 	public boolean isUtilityMethod(String methodName) {

@@ -28,6 +28,7 @@ public class Handler extends AbstractHandler {
 			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
 			// in-line from a doc method perspective
 			transformer.inlineDocMethod("docFrameWithoutTitle");
+	
 			
 		} catch (JavaModelException e) {
 			e.printStackTrace();

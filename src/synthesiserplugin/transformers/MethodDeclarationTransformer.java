@@ -38,26 +38,25 @@ public class MethodDeclarationTransformer {
 		this.javaProject.getiCompilationUnits().forEach(icu -> {
 			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
 			ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
-			
+
 			if (!docMethodsList.isEmpty()) {
-				MethodDeclaration docMethod = docMethodsList.stream()
-						.filter(md -> md.getName().toString().equals(name))
-						.findFirst()
-						.orElse(null);
+				MethodDeclaration docMethod = docMethodsList.stream().filter(md -> md.getName().toString().equals(name))
+						.findFirst().orElse(null);
 				ArrayList<MethodInvocation> utilityInvocations = visitor.getUtilityInvocations(docMethod);
-				
-				if (docMethod != null && !utilityInvocations.isEmpty()) {
+
+				if (!utilityInvocations.isEmpty()) {
 					CompilationUnit cu = visitor.getParsedVersion(icu);
 					MethodInvocation invocation = utilityInvocations.get(0);
 					inlineMethodInvocation(icu, cu, invocation);
 					
-					// update CU
+					// update CU after each in-line
 					IJavaProject transformedJProject = Handler.getProject();
+					
 					try {
 						this.javaProject = new JavaProject(transformedJProject);
-						
 						// recursive call
 						inlineDocMethod(name);
+
 					} catch (JavaModelException e) {
 						e.printStackTrace();
 					}
