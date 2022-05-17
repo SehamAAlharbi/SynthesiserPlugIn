@@ -11,7 +11,6 @@ Let's say we have a class with a method annotated with ` @Docummention ` as give
 			JFrame frame = createJFrame(false);
 			show(frame);
 			printInfo();
-			
 		}
 	}
 
