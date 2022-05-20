@@ -36,7 +36,7 @@
             locationURI="menu:org.eclipse.ui.main.menu?after=additions">
          <menu
                id="SynthesiserPlugIn.menus.sampleMenu"
-               label="Sample Menu"
+               label="Synthesiser"
                mnemonic="M">
             <command
                   commandId="SynthesiserPlugIn.commands.sampleCommand"

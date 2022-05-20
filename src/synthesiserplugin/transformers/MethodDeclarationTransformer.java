@@ -1,6 +1,6 @@
 package synthesiserplugin.transformers;
 
-import java.util.ArrayList;	
+import java.util.ArrayList;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -31,6 +31,28 @@ public class MethodDeclarationTransformer {
 	}
 
 	/**
+	 * @param name of the CU where all the utility invocations in all of its doc
+	 *             methods will be in-lined
+	 */
+	public void inlineAllDocIn(String name) {
+
+		this.javaProject.getiCompilationUnits().forEach(icu -> {
+
+			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
+			CompilationUnit cu = visitor.getParsedVersion(icu);
+			ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
+
+			if (cu.getJavaElement().getElementName().equalsIgnoreCase(name) && !docMethodsList.isEmpty()) {
+				docMethodsList.stream().forEach(md -> {
+					inlineDocMethod(md.getName().toString());
+				});
+			}
+
+		});
+
+	}
+
+	/**
 	 * @param name of the doc method to in-line all utility calls within its body
 	 */
 	public void inlineDocMethod(String name) {
@@ -48,10 +70,10 @@ public class MethodDeclarationTransformer {
 					CompilationUnit cu = visitor.getParsedVersion(icu);
 					MethodInvocation invocation = utilityInvocations.get(0);
 					inlineMethodInvocation(icu, cu, invocation);
-					
+
 					// update CU after each in-line
 					IJavaProject transformedJProject = Handler.getProject();
-					
+
 					try {
 						this.javaProject = new JavaProject(transformedJProject);
 						// recursive call
@@ -67,8 +89,9 @@ public class MethodDeclarationTransformer {
 
 	/**
 	 * The method that does the actual in-lining
-	 * @param icu  is where the utility invocation is found
-	 * @param cu   the parsed version of icu
+	 * 
+	 * @param icu               is where the utility invocation is found
+	 * @param cu                the parsed version of icu
 	 * @param utilityInvocation is the invocation to be in-lined
 	 */
 	private void inlineMethodInvocation(ICompilationUnit icu, CompilationUnit cu, MethodInvocation utilityInvocation) {
@@ -97,6 +120,7 @@ public class MethodDeclarationTransformer {
 
 	/**
 	 * gets the selections of a MethodInvocation in source code
+	 * 
 	 * @param node is the to-be-in-lined utility invocation
 	 * @return array of selections, body of utility method
 	 */

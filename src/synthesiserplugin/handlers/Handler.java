@@ -27,7 +27,10 @@ public class Handler extends AbstractHandler {
 			// transform
 			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
 			// in-line from a doc method perspective
-			transformer.inlineDocMethod("docFrameWithoutTitle");
+			transformer.inlineDocMethod("FlockDocMethod");
+			
+			// in-line all doc methods in a particular CU
+//			transformer.inlineAllDocIn("JFrameExample");
 	
 			
 		} catch (JavaModelException e) {
@@ -47,7 +50,7 @@ public class Handler extends AbstractHandler {
 			// get the project you need to work with
 			try {
 				if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")
-						&& project.getName().toString().equals("SampleProject")) {
+						&& project.getName().toString().equals("EpsilonStandaloneExamples")) {
 					jProject = JavaCore.create(project);
 				}
 			} catch (CoreException e) {
