@@ -1,6 +1,6 @@
 package synthesiserplugin.transformers;
 
-import java.util.ArrayList;
+import java.util.ArrayList;		
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -20,6 +20,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import synthesiserplugin.handlers.Handler;
 import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
+
 
 @SuppressWarnings("restriction")
 public class MethodDeclarationTransformer {
