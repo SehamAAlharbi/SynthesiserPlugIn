@@ -1,6 +1,8 @@
 package synthesiserplugin.deadcode.detector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -46,11 +48,6 @@ public class DeadCodeDetector {
 		buf.append("        } else {\n");
 		buf.append("            System.out.println(\"b\");\n");
 		buf.append("        }\n");
-		buf.append("        if (false) {\n");
-		buf.append("            System.out.println(\"c\");\n");
-		buf.append("        } else {\n");
-		buf.append("            System.out.println(\"d\");\n");
-		buf.append("        }\n");
 		buf.append("    }\n");
 		buf.append("}\n");
 
@@ -67,10 +64,31 @@ public class DeadCodeDetector {
 		CUCorrectionProposal proposal = (CUCorrectionProposal) proposals.get(0);
 		//prints the message that appears to suggest the fix 
 		System.out.println(proposal.getDisplayString());
-        String preview1 = getPreviewContent(proposal);
+		
+		// a preview of the content of the compilation unit after applying the proposed change
+        String preview = getPreviewContent(proposal);
         
         // To see what output this will generate
-        System.out.println(preview1);
+        System.out.println(preview);
+        
+        // a package for documentation examples
+        IPackageFragment pack = sourceFolder.createPackageFragment("api.documentation.examples", false, null);
+        
+        // convert the returned string into code and create a java file out of it
+        Pattern NEWLINE = Pattern.compile("\\R");
+        String lines[] = NEWLINE.split(preview);
+        StringBuffer buffer = new StringBuffer();
+        for (String line : lines){
+        	if (line == lines[0]) {
+        		buffer.append("package api.documentation.examples; \n\n");
+        		continue;
+        	}
+        	buffer.append(line + "\n");
+          }
+        
+        // here you need to get the original CU name and use it to name the new CU, or call another method that refactor the CU name to the new one 
+        String name = "ExampleOne.java";
+        ICompilationUnit icu_ = pack.createCompilationUnit(name, buffer.toString(), false, null);
        
         
 	}
