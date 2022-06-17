@@ -1,7 +1,6 @@
 package synthesiserplugin.models;
 
-import java.util.ArrayList;			
-
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -88,6 +87,26 @@ public class JavaProject {
 
 	public void setCompilationUnits(ArrayList<CompilationUnit> compilationUnits) {
 		this.compilationUnits = compilationUnits;
+	}
+	
+	/**
+	 * 
+	 * @param name should be in full e.g., name.java
+	 * @return the CompilationUnit with the same @param name
+	 */
+	public CompilationUnit getCUByName (String name) {
+		CompilationUnit cu = this.compilationUnits.stream().filter(cUnit -> cUnit.getJavaElement().getElementName().equalsIgnoreCase(name)).findFirst().orElse(null);
+		return cu;
+	}
+	
+	/**
+	 * 
+	 * @param name should be in full e.g., name.java
+	 * @return the ICompilationUnit with the same @param name
+	 */
+	public ICompilationUnit getICUByName(String name) {
+		ICompilationUnit cu = this.iCompilationUnits.stream().filter(cUnit -> cUnit.getElementName().equalsIgnoreCase(name)).findFirst().orElse(null);
+		return cu;
 	}
 
 	@Override

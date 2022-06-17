@@ -3,50 +3,62 @@ package synthesiserplugin.handlers;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.Adapters;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.ui.handlers.HandlerUtil;
 
-import synthesiserplugin.deadcode.detector.DeadCodeDetector;
 import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.transformers.MethodDeclarationTransformer;
 
 public class Handler extends AbstractHandler {
+	
+	static IFile file;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 
+		// get the name of the selected .java source file
+		IStructuredSelection selection = HandlerUtil.getCurrentStructuredSelection(event);
+		IResource resource = Adapters.adapt(selection.getFirstElement(), IResource.class);
+		if (resource instanceof IFile) {
+		  IFile file = (IFile)resource;
+		  Handler.file = file;
+
+		}
+		
+		// get the Java project you want to work with
 		IJavaProject jProject = getProject();
 		
 		//---------------------
 		// Check the dead code detection
-		IPackageFragmentRoot packageFragment = null;
-		try {
-			for (IPackageFragmentRoot packageFragmentRoot : jProject.getPackageFragmentRoots()) {
-					if (packageFragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
-						packageFragment = packageFragmentRoot;
-					}
-					
-			}
-			
-		} catch (JavaModelException e1) {
-			e1.printStackTrace();
-		}
-	        
-		DeadCodeDetector detector = new DeadCodeDetector(jProject, packageFragment );
-		System.out.println(jProject.getElementName().toString() + packageFragment.getElementName().toString());
-		
-		try {
-			detector.DetectIfThenDeadCode();
-		} catch (CoreException e1) {
-			e1.printStackTrace();
-		}
+//		IPackageFragmentRoot packageFragment = null;
+//		try {
+//			for (IPackageFragmentRoot packageFragmentRoot : jProject.getPackageFragmentRoots()) {
+//					if (packageFragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+//						packageFragment = packageFragmentRoot;
+//					}
+//					
+//			}
+//			
+//		} catch (JavaModelException e1) {
+//			e1.printStackTrace();
+//		}
+//	        
+//		DeadCodeDetector detector = new DeadCodeDetector(jProject, packageFragment );
+//		System.out.println(jProject.getElementName().toString() + packageFragment.getElementName().toString());
+//		
+//		try {
+//			detector.DetectIfThenDeadCode();
+//		} catch (CoreException e1) {
+//			e1.printStackTrace();
+//		}
 		
 		//---------------------
 		
@@ -55,15 +67,12 @@ public class Handler extends AbstractHandler {
 		try {
 			// create a model
 			JavaProject javaProject  = new JavaProject(jProject);
+			
 			// transform
 			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
-			// in-line from a doc method perspective
-//			transformer.inlineDocMethod("FlockDocMethod");
-			
-			// in-line all doc methods in a particular CU
-//			transformer.inlineAllDocIn("JFrameExample");
-	
-			
+			// in-line all doc methods in the selected CU i.e. (.java) file by the user
+			transformer.inlineAllDocIn(file.getName());
+				
 		} catch (JavaModelException e) {
 			e.printStackTrace();
 		}
@@ -71,23 +80,23 @@ public class Handler extends AbstractHandler {
 		return null;
 	}
 
+	/**
+	 * once the user select a .java file, the project where that file is located will be used
+	 * @return the java project where the .java file is being selected
+	 */
 	public static IJavaProject getProject() {
 		
-		IWorkspace workspace = ResourcesPlugin.getWorkspace();
-		IWorkspaceRoot root = workspace.getRoot();
 		IJavaProject jProject = null;
-		IProject[] projects = root.getProjects();
-		for (IProject project : projects) {
-			// get the project you need to work with
+		IProject project = file.getProject();
 			try {
+				// only open projects that are of Java nature will be returned
 				if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")
-						&& project.getName().toString().equals("SampleProject")) {
+						&& project.isOpen()) {
 					jProject = JavaCore.create(project);
 				}
 			} catch (CoreException e) {
 				e.printStackTrace();
 			}
-		}
 		
 		return jProject;
 	}

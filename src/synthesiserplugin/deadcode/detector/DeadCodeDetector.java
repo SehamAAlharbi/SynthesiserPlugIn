@@ -1,6 +1,6 @@
 package synthesiserplugin.deadcode.detector;
 
-import java.util.ArrayList;
+import java.util.ArrayList;	
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
@@ -87,8 +87,8 @@ public class DeadCodeDetector {
           }
         
         // here you need to get the original CU name and use it to name the new CU, or call another method that refactor the CU name to the new one 
-        String name = "ExampleOne.java";
-        ICompilationUnit icu_ = pack.createCompilationUnit(name, buffer.toString(), false, null);
+        String CUName = "ExampleOne.java";
+        ICompilationUnit icu_ = pack.createCompilationUnit(CUName, buffer.toString(), false, null);
        
         
 	}

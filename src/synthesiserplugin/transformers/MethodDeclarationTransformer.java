@@ -1,6 +1,6 @@
 package synthesiserplugin.transformers;
 
-import java.util.ArrayList;		
+import java.util.ArrayList;			
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -36,35 +36,24 @@ public class MethodDeclarationTransformer {
 	 *             methods will be in-lined
 	 */
 	public void inlineAllDocIn(String name) {
+		
+		ICompilationUnit icu = this.javaProject.getICUByName(name);
+		inlineDocMethod(icu);
 
-		this.javaProject.getiCompilationUnits().forEach(icu -> {
-
-			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
-			CompilationUnit cu = visitor.getParsedVersion(icu);
-			ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
-
-			if (cu.getJavaElement().getElementName().equalsIgnoreCase(name) && !docMethodsList.isEmpty()) {
-				docMethodsList.stream().forEach(md -> {
-					inlineDocMethod(md.getName().toString());
-				});
-			}
-
-		});
 
 	}
-
+	
 	/**
 	 * @param name of the doc method to in-line all utility calls within its body
 	 */
-	public void inlineDocMethod(String name) {
+	public void inlineDocMethod(ICompilationUnit icu) {
 
-		this.javaProject.getiCompilationUnits().forEach(icu -> {
-			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
-			ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
+		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
+		ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
 
-			if (!docMethodsList.isEmpty()) {
-				MethodDeclaration docMethod = docMethodsList.stream().filter(md -> md.getName().toString().equals(name))
-						.findFirst().orElse(null);
+		if (!docMethodsList.isEmpty()) {
+
+			docMethodsList.stream().forEach(docMethod -> {
 				ArrayList<MethodInvocation> utilityInvocations = visitor.getUtilityInvocations(docMethod);
 
 				if (!utilityInvocations.isEmpty()) {
@@ -78,14 +67,15 @@ public class MethodDeclarationTransformer {
 					try {
 						this.javaProject = new JavaProject(transformedJProject);
 						// recursive call
-						inlineDocMethod(name);
+						inlineDocMethod(this.javaProject.getICUByName(icu.getElementName()));
 
 					} catch (JavaModelException e) {
 						e.printStackTrace();
 					}
 				}
-			}
-		});
+			});
+		}
+
 	}
 
 	/**
