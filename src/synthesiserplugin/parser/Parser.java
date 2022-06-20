@@ -20,5 +20,4 @@ public class Parser {
 		return (CompilationUnit) parser.createAST(null);
 		
 	}
-
 }
