@@ -18,6 +18,7 @@ public class Parser {
 		parser.setSource(icu);
 		parser.setResolveBindings(true);
 		return (CompilationUnit) parser.createAST(null);
+		
 	}
 
 }

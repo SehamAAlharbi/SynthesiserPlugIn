@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;
+import org.eclipse.core.commands.AbstractHandler;	
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
@@ -13,6 +13,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
+
 
 import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.transformers.MethodDeclarationTransformer;
@@ -31,6 +32,7 @@ public class Handler extends AbstractHandler {
 		  IFile file = (IFile)resource;
 		  Handler.file = file;
 
+		  
 		}
 		
 		// get the Java project you want to work with
