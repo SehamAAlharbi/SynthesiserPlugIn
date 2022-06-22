@@ -17,6 +17,7 @@ import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
 import org.eclipse.ltk.core.refactoring.PerformRefactoringOperation;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import synthesiserplugin.deadcode.DeadCodeDetector;
 import synthesiserplugin.handlers.Handler;
 import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
@@ -39,7 +40,13 @@ public class MethodDeclarationTransformer {
 		
 		ICompilationUnit icu = this.javaProject.getICUByName(name);
 		inlineDocMethod(icu);
-
+		
+		// work on dead code, the last in-lined version of the this icu
+		DeadCodeDetector detector = new DeadCodeDetector(this.javaProject.getICUByName(icu.getElementName()));
+		// detect dead code
+		detector.detect();
+		// generate dead-code free .java file and embed it under the documentation package
+		detector.generateCleanCode(javaProject.getDocumentationPackage());
 
 	}
 	

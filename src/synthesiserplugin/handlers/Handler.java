@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;	
+import org.eclipse.core.commands.AbstractHandler;			
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
@@ -32,39 +32,10 @@ public class Handler extends AbstractHandler {
 		  IFile file = (IFile)resource;
 		  Handler.file = file;
 
-		  
 		}
 		
 		// get the Java project you want to work with
 		IJavaProject jProject = getProject();
-		
-		//---------------------
-		// Check the dead code detection
-//		IPackageFragmentRoot packageFragment = null;
-//		try {
-//			for (IPackageFragmentRoot packageFragmentRoot : jProject.getPackageFragmentRoots()) {
-//					if (packageFragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
-//						packageFragment = packageFragmentRoot;
-//					}
-//					
-//			}
-//			
-//		} catch (JavaModelException e1) {
-//			e1.printStackTrace();
-//		}
-//	        
-//		DeadCodeDetector detector = new DeadCodeDetector(jProject, packageFragment );
-//		System.out.println(jProject.getElementName().toString() + packageFragment.getElementName().toString());
-//		
-//		try {
-//			detector.DetectIfThenDeadCode();
-//		} catch (CoreException e1) {
-//			e1.printStackTrace();
-//		}
-		
-		//---------------------
-		
-		
 		
 		try {
 			// create a model
@@ -72,6 +43,7 @@ public class Handler extends AbstractHandler {
 			
 			// transform
 			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
+			
 			// in-line all doc methods in the selected CU i.e. (.java) file by the user
 			transformer.inlineAllDocIn(file.getName());
 				

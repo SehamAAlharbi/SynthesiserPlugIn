@@ -19,6 +19,8 @@ public class JavaProject {
 	private ArrayList<IPackageFragment> packages;
 	private ArrayList<ICompilationUnit> iCompilationUnits;
 	private ArrayList<CompilationUnit> compilationUnits;
+	private IPackageFragmentRoot sourceFolder;
+	private IPackageFragment documentationPackage;
 
 	// constructor to create a JavaProject from the JDT Java Model IJavaProject
 	public JavaProject(IJavaProject javaProject) throws JavaModelException {
@@ -38,6 +40,16 @@ public class JavaProject {
 				}
 			}
 		}
+		
+		// source folder 
+		for (IPackageFragmentRoot packageFragmentRoot : javaProject.getPackageFragmentRoots()) {
+			if (packageFragmentRoot.getKind() == IPackageFragmentRoot.K_SOURCE) {
+				this.sourceFolder = packageFragmentRoot;
+			}
+		}
+		
+		// a package for documentation examples
+		this.documentationPackage = this.sourceFolder.createPackageFragment("documentation.usage.examples", false, null);
 
 		// parsed versions of all the iCompilationUnit (s)
 		Parser parser = new Parser();
@@ -89,6 +101,22 @@ public class JavaProject {
 		this.compilationUnits = compilationUnits;
 	}
 	
+	public IPackageFragmentRoot getSourceFolder() {
+		return sourceFolder;
+	}
+
+	public void setSourceFolder(IPackageFragmentRoot sourceFolder) {
+		this.sourceFolder = sourceFolder;
+	}
+
+	public IPackageFragment getDocumentationPackage() {
+		return documentationPackage;
+	}
+
+	public void setDocumentationPackage(IPackageFragment documentationPackage) {
+		this.documentationPackage = documentationPackage;
+	}
+
 	/**
 	 * 
 	 * @param name should be in full e.g., name.java
