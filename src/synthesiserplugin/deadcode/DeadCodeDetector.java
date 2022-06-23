@@ -10,6 +10,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -60,21 +61,29 @@ public class DeadCodeDetector {
 		
 		// Specify the correction proposals for each problem
 		collectCorrectionProposals();
+		
 	}
 	
-	public void generateCleanCode(IPackageFragment documentationPackage) {
+	public void generateCleanCode(IPackageFragment documentationPackage) throws JavaModelException {
 		// code generator
 		CodeGenerator generator = new CodeGenerator(documentationPackage);
+		
+		if(!deadCodeProblems.isEmpty()) {
 		// for each problem, get the removal fix
 		deadCodeProblems.stream().forEach(problem -> {
 			CUCorrectionProposal proposal = getRemaovalProposal(problem.getID());
 			try {
-				generator.generate(proposal);
+				generator.generate(proposal, icu.getElementName());
 			} catch (CoreException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		});
+		}
+		
+		else {
+			generator.placeInDocPackage(icu);
+		}
 	}
 	
 	private void collectCorrectionProposals() {

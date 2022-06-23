@@ -21,7 +21,7 @@ public class CodeGenerator {
 	 * @param preview the returned value from proposal.getPreviewContent()
 	 * @throws CoreException 
 	 */
-	public ICompilationUnit generate (CUCorrectionProposal removalProposal) throws CoreException {
+	public ICompilationUnit generate (CUCorrectionProposal removalProposal, String icuName) throws CoreException {
 		
 		String preview = removalProposal.getPreviewContent();
 		  // convert the returned string into code and create a java file out of it
@@ -36,15 +36,38 @@ public class CodeGenerator {
         	buffer.append(line + "\n");
           }
         
-        return process(buffer);
+        return process(buffer, icuName);
 		
 	}
 	
-	private ICompilationUnit process (StringBuffer codeBuffer) throws JavaModelException {
+	/**
+	 * for code with no dead code problems
+	 * @param icu
+	 * @return
+	 * @throws JavaModelException 
+	 */
+	public ICompilationUnit placeInDocPackage(ICompilationUnit icu) throws JavaModelException {
 		
-		// here you need to get the original CU name and use it to name the new CU, or call another method that refactor the CU name to the new one 
-        String CUName = "ExampleOne.java";
-        ICompilationUnit icu = documentationPackage.createCompilationUnit(CUName, codeBuffer.toString(), false, null);
+		String oldName = icu.getElementName();
+		// to remove the .java from the original icu name
+        String newICUName = oldName.substring(0, oldName.length()-5) + "Doc.java";
+        ICompilationUnit newICU = documentationPackage.createCompilationUnit(newICUName, icu.toString(), false, null);
+       
+		return newICU;
+	}
+	
+	/**
+	 * for code with dead code problems
+	 * @param codeBuffer
+	 * @param icuName
+	 * @return
+	 * @throws JavaModelException
+	 */
+	private ICompilationUnit process (StringBuffer codeBuffer, String icuName) throws JavaModelException {
+		
+		// to remove the .java from the original icu name
+        String newICUName = icuName.substring(0, icuName.length()-5) + "Doc.java";
+        ICompilationUnit icu = documentationPackage.createCompilationUnit(newICUName, codeBuffer.toString(), false, null);
 	
 		return icu;
 	}

@@ -2,7 +2,9 @@ package synthesiserplugin.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
+import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -135,6 +137,39 @@ public class JavaProject {
 	public ICompilationUnit getICUByName(String name) {
 		ICompilationUnit cu = this.iCompilationUnits.stream().filter(cUnit -> cUnit.getElementName().equalsIgnoreCase(name)).findFirst().orElse(null);
 		return cu;
+	}
+	
+	// implementation is not complete, suppose to return a working copy of the  ICU to perform changes on, 
+	// underlying resources are not retrieved, e.g. if the class extends another class, the superclass is not recognised
+	public ICompilationUnit getWorkingCopy (ICompilationUnit icu) throws JavaModelException {
+		
+		ICompilationUnit workingCopy = null;
+		
+		icu.becomeWorkingCopy(null);
+		 
+		IBuffer buffer = icu.getBuffer();
+		String oldContents = buffer.getContents();
+//		String newContents = ...; //make some change
+//		buffer.setContents(newContents);
+		
+	    Pattern NEWLINE = Pattern.compile("\\R");
+        String lines[] = NEWLINE.split(oldContents);
+        StringBuffer stringBuffer = new StringBuffer();
+        for (String line : lines){
+        	stringBuffer.append(line + "\n");
+          } 
+        
+        // under the doc package
+        String oldName = icu.getElementName();
+        String newName = oldName.substring(0, oldName.length()-5); 
+        workingCopy= documentationPackage.createCompilationUnit(newName + "DocExample.java", stringBuffer.toString(), false, null);
+        
+		icu.reconcile(0, false, null, null);
+		icu.discardWorkingCopy();
+		   
+		   
+		return workingCopy;
+		
 	}
 
 	@Override

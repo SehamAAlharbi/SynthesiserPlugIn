@@ -27,6 +27,7 @@ import synthesiserplugin.visitors.MethodDeclarationVisitor;
 public class MethodDeclarationTransformer {
 
 	private JavaProject javaProject;
+	ICompilationUnit updatedICU;
 
 	public MethodDeclarationTransformer(JavaProject javaProject) {
 		this.javaProject = javaProject;
@@ -35,25 +36,22 @@ public class MethodDeclarationTransformer {
 	/**
 	 * @param name of the CU where all the utility invocations in all of its doc
 	 *             methods will be in-lined
+	 * @throws JavaModelException 
 	 */
-	public void inlineAllDocIn(String name) {
+	public void inlineAllDocIn(String name) throws JavaModelException {
 		
 		ICompilationUnit icu = this.javaProject.getICUByName(name);
-		inlineDocMethod(icu);
-		
-		// work on dead code, the last in-lined version of the this icu
-		DeadCodeDetector detector = new DeadCodeDetector(this.javaProject.getICUByName(icu.getElementName()));
-		// detect dead code
-		detector.detect();
-		// generate dead-code free .java file and embed it under the documentation package
-		detector.generateCleanCode(javaProject.getDocumentationPackage());
+		// get a working copy to work with
+//		ICompilationUnit workingCopy = this.javaProject.getWorkingCopy(icu);
+		// perform in-lining
+		this.updatedICU = inlineDocMethod(icu);
 
 	}
 	
 	/**
 	 * @param name of the doc method to in-line all utility calls within its body
 	 */
-	public void inlineDocMethod(ICompilationUnit icu) {
+	public ICompilationUnit inlineDocMethod(ICompilationUnit icu) {
 
 		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
 		ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
@@ -66,23 +64,41 @@ public class MethodDeclarationTransformer {
 				if (!utilityInvocations.isEmpty()) {
 					CompilationUnit cu = visitor.getParsedVersion(icu);
 					MethodInvocation invocation = utilityInvocations.get(0);
-					inlineMethodInvocation(icu, cu, invocation);
+					
+					// update the IC after each in-line, to work with an updated version
+					ICompilationUnit updatedICU = inlineMethodInvocation(icu, cu, invocation);
+					inlineDocMethod(updatedICU);
 
 					// update CU after each in-line
-					IJavaProject transformedJProject = Handler.getProject();
+//					IJavaProject transformedJProject = Handler.getProject();
 
-					try {
-						this.javaProject = new JavaProject(transformedJProject);
-						// recursive call
-						inlineDocMethod(this.javaProject.getICUByName(icu.getElementName()));
-
-					} catch (JavaModelException e) {
-						e.printStackTrace();
-					}
+//					try {
+//						this.javaProject = new JavaProject(transformedJProject);
+//						// recursive call
+//						inlineDocMethod(this.javaProject.getICUByName(icu.getElementName()));
+//
+//					} catch (JavaModelException e) {
+//						e.printStackTrace();
+//					}
 				}
 			});
 		}
+		
+		return icu ;
 
+	}
+	
+	public void detectAndGenerate() {
+		// work on dead code, the last in-lined version of the this icu
+		DeadCodeDetector detector = new DeadCodeDetector(updatedICU);
+		// detect dead code
+		detector.detect();
+		// generate dead-code free .java file and embed it under the documentation package
+		try {
+			detector.generateCleanCode(javaProject.getDocumentationPackage());
+		} catch (JavaModelException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -92,7 +108,7 @@ public class MethodDeclarationTransformer {
 	 * @param cu                the parsed version of icu
 	 * @param utilityInvocation is the invocation to be in-lined
 	 */
-	private void inlineMethodInvocation(ICompilationUnit icu, CompilationUnit cu, MethodInvocation utilityInvocation) {
+	private ICompilationUnit inlineMethodInvocation(ICompilationUnit icu, CompilationUnit cu, MethodInvocation utilityInvocation) {
 
 		int[] selection = getInvocationSelections(utilityInvocation);
 		InlineMethodRefactoring refactoring = InlineMethodRefactoring.create(icu, cu, selection[0], selection[1]);
@@ -114,6 +130,8 @@ public class MethodDeclarationTransformer {
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
+		
+		return icu;
 	}
 
 	/**
