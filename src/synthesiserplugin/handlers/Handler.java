@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;			
+import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
@@ -14,13 +14,12 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-
 import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.transformers.MethodDeclarationTransformer;
 
 public class Handler extends AbstractHandler {
 	
-	static IFile file;
+	public static IFile file;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -46,9 +45,10 @@ public class Handler extends AbstractHandler {
 			
 			// in-line all doc methods in the selected CU i.e. (.java) file by the user
 			transformer.inlineAllDocIn(file.getName());
-			// work on the dead code
-			transformer.detectAndGenerate();
-				
+			
+			// work on the dead code, no need, it's called in the transformer now
+//			transformer.detectAndGenerate();
+			
 		} catch (JavaModelException e) {
 			e.printStackTrace();
 		}
@@ -76,4 +76,5 @@ public class Handler extends AbstractHandler {
 		
 		return jProject;
 	}
+	
 }

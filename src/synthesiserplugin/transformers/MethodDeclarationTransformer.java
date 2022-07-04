@@ -1,12 +1,11 @@
 package synthesiserplugin.transformers;
 
-import java.util.ArrayList;			
+import java.util.ArrayList;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -18,7 +17,6 @@ import org.eclipse.ltk.core.refactoring.PerformRefactoringOperation;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import synthesiserplugin.deadcode.DeadCodeDetector;
-import synthesiserplugin.handlers.Handler;
 import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
@@ -27,7 +25,7 @@ import synthesiserplugin.visitors.MethodDeclarationVisitor;
 public class MethodDeclarationTransformer {
 
 	private JavaProject javaProject;
-	ICompilationUnit updatedICU;
+	private ICompilationUnit updatedICU;
 
 	public MethodDeclarationTransformer(JavaProject javaProject) {
 		this.javaProject = javaProject;
@@ -41,10 +39,16 @@ public class MethodDeclarationTransformer {
 	public void inlineAllDocIn(String name) throws JavaModelException {
 		
 		ICompilationUnit icu = this.javaProject.getICUByName(name);
+		
 		// get a working copy to work with
-//		ICompilationUnit workingCopy = this.javaProject.getWorkingCopy(icu);
+		ICompilationUnit workingCopy = this.javaProject.getWorkingCopy(icu);
+		
 		// perform in-lining
-		this.updatedICU = inlineDocMethod(icu);
+		this.updatedICU = inlineDocMethod(workingCopy);
+		
+		// work on dead code
+//		detectAndGenerateFirstSolution();
+		detectAndGenerateSecondSolution();
 
 	}
 	
@@ -86,19 +90,6 @@ public class MethodDeclarationTransformer {
 		
 		return icu ;
 
-	}
-	
-	public void detectAndGenerate() {
-		// work on dead code, the last in-lined version of the this icu
-		DeadCodeDetector detector = new DeadCodeDetector(updatedICU);
-		// detect dead code
-		detector.detect();
-		// generate dead-code free .java file and embed it under the documentation package
-		try {
-			detector.generateCleanCode(javaProject.getDocumentationPackage());
-		} catch (JavaModelException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -146,6 +137,28 @@ public class MethodDeclarationTransformer {
 		int end = node.getLength();
 		int[] selections = { start, end };
 		return selections;
+	}
+	
+	private void detectAndGenerateFirstSolution() {
+		// work on dead code, the last in-lined version of the this icu
+		DeadCodeDetector detector = new DeadCodeDetector(updatedICU);
+		// detect dead code
+		detector.detect();
+		// generate dead-code free .java file and embed it under the documentation package
+		try {
+			detector.generateCleanCode(javaProject.getDocumentationPackage());
+		} catch (JavaModelException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void detectAndGenerateSecondSolution() {
+		// work on dead code, the last in-lined version of the this icu
+		DeadCodeDetector detector = new DeadCodeDetector(updatedICU);
+		// detect dead code
+		detector.detectProblems();
+		detector.generateCode(javaProject.getDocumentationPackage());
+
 	}
 
 }
