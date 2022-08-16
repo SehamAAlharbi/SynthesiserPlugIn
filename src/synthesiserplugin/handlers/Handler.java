@@ -45,9 +45,7 @@ public class Handler extends AbstractHandler {
 			
 			// in-line all doc methods in the selected CU i.e. (.java) file by the user
 			transformer.inlineAllDocIn(file.getName());
-			
-			// work on the dead code, no need, it's called in the transformer now
-//			transformer.detectAndGenerate();
+		
 			
 		} catch (JavaModelException e) {
 			e.printStackTrace();

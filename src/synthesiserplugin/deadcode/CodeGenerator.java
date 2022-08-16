@@ -1,6 +1,6 @@
 package synthesiserplugin.deadcode;
 
-import java.util.List;
+import java.util.List;	
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;
@@ -37,6 +37,10 @@ public class CodeGenerator {
 
 	public CodeGenerator(IPackageFragment documentationPackage) {
 		this.documentationPackage = documentationPackage;
+	}
+	
+	public CodeGenerator() {
+		
 	}
 
 	/**
@@ -97,7 +101,7 @@ public class CodeGenerator {
 	 * @param icu
 	 * @return
 	 */
-	private CompilationUnit polishCode(ICompilationUnit icu) {
+	public CompilationUnit polishCode(ICompilationUnit icu) {
 
 		CompilationUnit cu = new Parser().parse(icu);
 
@@ -157,6 +161,11 @@ public class CodeGenerator {
 		return newICUName;
 	}
 
+	/**
+	 * formats a String as Java Code
+	 * @param code
+	 * @return
+	 */
 	private String formatCode(String code) {
 
 		CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(null);
@@ -180,7 +189,7 @@ public class CodeGenerator {
 	 * @param icu
 	 * @throws JavaModelException 
 	 */
-	public static void renameGeneratedClass(ICompilationUnit icu, String newName) throws JavaModelException {
+	public static void refactorClassName(ICompilationUnit icu, String newName) throws JavaModelException {
 		
 		
 

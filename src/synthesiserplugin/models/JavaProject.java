@@ -143,10 +143,9 @@ public class JavaProject {
 		return cu;
 	}
 
-	// implementation is not complete, supposed to return a working copy of the ICU
-	// to perform changes on,
+	
 	// underlying resources are not retrieved, e.g. if the class extends another
-	// class, the superclass is not recognised
+	// class, the methods in superclass is not recognised
 	public ICompilationUnit getWorkingCopy(ICompilationUnit icu) throws JavaModelException {
 
 		ICompilationUnit workingCopy = null;
@@ -166,7 +165,7 @@ public class JavaProject {
 		workingCopy = documentationPackage.createCompilationUnit(icu.getElementName(), stringBuffer.toString(), false,
 				null);
 
-		icu.reconcile(0, false, null, null);
+		icu.reconcile(0, true, null, null);
 		icu.discardWorkingCopy();
 
 		return workingCopy;
