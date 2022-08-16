@@ -1,7 +1,6 @@
 package synthesiserplugin.deadcode;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -29,25 +28,13 @@ import org.eclipse.jdt.core.dom.SwitchCase;
 import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
-import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
-import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.TypeLocation;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.core.manipulation.dom.NecessaryParenthesesChecker;
-import org.eclipse.jdt.internal.corext.codemanipulation.ContextSensitiveImportRewriteContext;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
-import org.eclipse.jdt.internal.ui.text.correction.AdvancedQuickAssistProcessor;
 import org.eclipse.jdt.internal.ui.text.correction.AssistContext;
-import org.eclipse.jdt.internal.ui.text.correction.CorrectionMessages;
-import org.eclipse.jdt.internal.ui.text.correction.IProposalRelevance;
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
-import org.eclipse.jdt.ui.text.java.correction.ASTRewriteCorrectionProposal;
-import org.eclipse.jdt.ui.text.java.correction.ICommandAccess;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.ui.ISharedImages;
-import org.eclipse.ui.PlatformUI;
 
 import synthesiserplugin.parser.Parser;
 
@@ -104,16 +91,15 @@ public class DeadCodeDetector {
 
 			// get context and ProblemLocation
 			IInvocationContext context = new AssistContext(iCompilationUnit, problemLocation[0], problemLocation[1]);
-//			ASTNode selectedNode = getSelectedNode(cu, problemLocation[0], problemLocation[1]);
 			ProblemLocation location = new ProblemLocation(problem);
 
 			
 			try {
-				// rewrite AST based on each dead/unreachable code problem
+				// rewrite AST based on the location of the node causing the each dead/unreachable code problem
 				modifyAST(context, location);
 				// apply the removal changes on the ICU
 				iCompilationUnit.applyTextEdit(rewriter.rewriteAST(), new NullProgressMonitor());
-				// recursive call - to take the latest version if the ICU after removing the 1st dead/unreachable code problem
+				// recursive call - to take the latest version of the ICU after removing the 1st dead/unreachable code problem
 				detectProblems(iCompilationUnit);
 				
 			} catch (JavaModelException e) {
@@ -128,9 +114,11 @@ public class DeadCodeDetector {
 
 	}
 
+	/**
+	 * generate clean code from the transformed ICU
+	 * @param documentationPackage
+	 */
 	public void generateCode(IPackageFragment documentationPackage) {
-
-		// code generator
 		CodeGenerator generator = new CodeGenerator(documentationPackage);
 		generator.generateCode(this.icu);
 
@@ -157,15 +145,13 @@ public class DeadCodeDetector {
 	private void modifyAST(IInvocationContext context, ProblemLocation problemLocation)
 			throws JavaModelException, IllegalArgumentException {
 
-		ArrayList<ICommandAccess> proposals = new ArrayList<ICommandAccess>();
-		getUnreachableCodeRewrites(context, problemLocation, proposals);
+		getUnreachableCodeRewrites(context, problemLocation);
 
 	}
 
-	// ---- My Modification of the JDT dead code nodes removal ---- //
+	// ---- My replication and edits of the JDT dead code nodes detection and replacement: LocalCorrectionsSubProcessor.java line 1491 ---- //
 
-	public void getUnreachableCodeRewrites(IInvocationContext context, IProblemLocation problem,
-			Collection<ICommandAccess> proposals) {
+	public void getUnreachableCodeRewrites(IInvocationContext context, IProblemLocation problem) {
 		CompilationUnit root = context.getASTRoot();
 		ASTNode selectedNode = problem.getCoveringNode(root);
 		if (selectedNode == null) {
@@ -179,27 +165,27 @@ public class DeadCodeDetector {
 		}
 
 		if (parent instanceof WhileStatement) {
-			addRemoveIncludingConditionRewrite(context, parent, null, proposals);
+			addRemoveIncludingConditionRewrite(context, parent, null);
 
 		} else if (selectedNode.getLocationInParent() == IfStatement.THEN_STATEMENT_PROPERTY) {
 			Statement elseStatement = ((IfStatement) parent).getElseStatement();
-			addRemoveIncludingConditionRewrite(context, parent, elseStatement, proposals);
+			addRemoveIncludingConditionRewrite(context, parent, elseStatement);
 
 		} else if (selectedNode.getLocationInParent() == IfStatement.ELSE_STATEMENT_PROPERTY) {
 			Statement thenStatement = ((IfStatement) parent).getThenStatement();
-			addRemoveIncludingConditionRewrite(context, parent, thenStatement, proposals);
+			addRemoveIncludingConditionRewrite(context, parent, thenStatement);
 
 		} else if (selectedNode.getLocationInParent() == ForStatement.BODY_PROPERTY) {
 			Statement body = ((ForStatement) parent).getBody();
-			addRemoveIncludingConditionRewrite(context, parent, body, proposals);
+			addRemoveIncludingConditionRewrite(context, parent, body);
 
 		} else if (selectedNode.getLocationInParent() == ConditionalExpression.THEN_EXPRESSION_PROPERTY) {
 			Expression elseExpression = ((ConditionalExpression) parent).getElseExpression();
-			addRemoveIncludingConditionRewrite(context, parent, elseExpression, proposals);
+			addRemoveIncludingConditionRewrite(context, parent, elseExpression);
 
 		} else if (selectedNode.getLocationInParent() == ConditionalExpression.ELSE_EXPRESSION_PROPERTY) {
 			Expression thenExpression = ((ConditionalExpression) parent).getThenExpression();
-			addRemoveIncludingConditionRewrite(context, parent, thenExpression, proposals);
+			addRemoveIncludingConditionRewrite(context, parent, thenExpression);
 
 		} else if (selectedNode.getLocationInParent() == InfixExpression.RIGHT_OPERAND_PROPERTY) {
 			// also offer split && / || condition proposals:
@@ -226,14 +212,11 @@ public class DeadCodeDetector {
 
 			rewriter.replace(toReplace, rewriter.createMoveTarget(replacement), null);
 
-			String label = CorrectionMessages.LocalCorrectionsSubProcessor_removeunreachablecode_description;
-			addRemoveRewrite(context, rewriter, label, proposals);
+			
 
 			AssistContext assistContext = new AssistContext(context.getCompilationUnit(),
 					infixExpression.getRightOperand().getStartPosition() - 1, 0);
 			assistContext.setASTRoot(root);
-			AdvancedQuickAssistProcessor.getSplitAndConditionProposals(assistContext, infixExpression, proposals);
-			AdvancedQuickAssistProcessor.getSplitOrConditionProposals(assistContext, infixExpression, proposals);
 
 		} else if (selectedNode instanceof Statement && selectedNode.getLocationInParent().isChildListProperty()) {
 			// remove all statements following the unreachable:
@@ -242,7 +225,7 @@ public class DeadCodeDetector {
 			int idx = statements.indexOf(selectedNode);
 
 			rewriter = ASTRewrite.create(selectedNode.getAST());
-			String label = CorrectionMessages.LocalCorrectionsSubProcessor_removeunreachablecode_description;
+			
 
 			if (idx > 0) {
 				Object prevStatement = statements.get(idx - 1);
@@ -251,7 +234,6 @@ public class DeadCodeDetector {
 					if (ifStatement.getElseStatement() == null) {
 						// remove if (true), see https://bugs.eclipse.org/bugs/show_bug.cgi?id=261519
 						Statement thenStatement = ifStatement.getThenStatement();
-						label = CorrectionMessages.LocalCorrectionsSubProcessor_removeunreachablecode_including_condition_description;
 						if (thenStatement instanceof Block) {
 							// add all child nodes from Block node
 							List<Statement> thenStatements = ((Block) thenStatement).statements();
@@ -279,32 +261,21 @@ public class DeadCodeDetector {
 				rewriter.remove(statement, null);
 			}
 
-			addRemoveRewrite(context, rewriter, label, proposals);
-
 		} else {
 			// no special case, just remove the node:
-			addRemoveRewrite(context, selectedNode, proposals);
+			addRemoveRewrite(context, selectedNode);
 		}
 	}
 
-	private void addRemoveRewrite(IInvocationContext context, ASTNode selectedNode,
-			Collection<ICommandAccess> proposals) {
+	private void addRemoveRewrite(IInvocationContext context, ASTNode selectedNode) {
 		rewriter = ASTRewrite.create(selectedNode.getAST());
 		rewriter.remove(selectedNode, null);
-
-		String label = CorrectionMessages.LocalCorrectionsSubProcessor_removeunreachablecode_description;
-		addRemoveRewrite(context, rewriter, label, proposals);
 	}
 
 	private void addRemoveIncludingConditionRewrite(IInvocationContext context, ASTNode toRemove,
-			ASTNode replacement, Collection<ICommandAccess> proposals) {
-		Image image = PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_DELETE);
-		String label = CorrectionMessages.LocalCorrectionsSubProcessor_removeunreachablecode_including_condition_description;
+			ASTNode replacement) {
 		AST ast = toRemove.getAST();
-//		ASTRewrite rewrite= ASTRewrite.create(ast);
 		rewriter = ASTRewrite.create(ast);
-		ASTRewriteCorrectionProposal proposal = new ASTRewriteCorrectionProposal(label, context.getCompilationUnit(),
-				rewriter, IProposalRelevance.REMOVE_UNREACHABLE_CODE_INCLUDING_CONDITION, image);
 
 		if (replacement == null || replacement instanceof EmptyStatement
 				|| replacement instanceof Block && ((Block) replacement).statements().size() == 0) {
@@ -328,9 +299,8 @@ public class DeadCodeDetector {
 					moved = parenthesized;
 				}
 				cast.setExpression(moved);
-				ImportRewrite imports = proposal.createImportRewrite(context.getASTRoot());
-				ImportRewriteContext importRewriteContext = new ContextSensitiveImportRewriteContext(toRemove, imports);
-				cast.setType(imports.addImport(explicitCast, ast, importRewriteContext, TypeLocation.CAST));
+				
+				
 				moved = cast;
 			}
 			rewriter.replace(toRemove, moved, null);
@@ -349,16 +319,5 @@ public class DeadCodeDetector {
 
 			rewriter.replace(toRemove, moveTarget, null);
 		}
-
-		proposals.add(proposal);
 	}
-
-	private static void addRemoveRewrite(IInvocationContext context, ASTRewrite rewrite, String label,
-			Collection<ICommandAccess> proposals) {
-		Image image = PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_DELETE);
-		ASTRewriteCorrectionProposal proposal = new ASTRewriteCorrectionProposal(label, context.getCompilationUnit(),
-				rewrite, 10, image);
-		proposals.add(proposal);
-	}
-
 }
