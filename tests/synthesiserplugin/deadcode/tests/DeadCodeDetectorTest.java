@@ -30,7 +30,7 @@ public class DeadCodeDetectorTest {
 
 		file = new File(FILE_PATH);
 		String fileContent = Parser.readFileToString(FILE_PATH);
-		detector = new DeadCodeDetector();
+		detector = new DeadCodeDetector(compilationUnit);
 		cu = Parser.parse(fileContent);
 
 		

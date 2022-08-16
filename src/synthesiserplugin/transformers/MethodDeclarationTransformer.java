@@ -41,21 +41,14 @@ public class MethodDeclarationTransformer {
 
 		// you are retrieving the CU by its name, what if there is more than one but in different packages?
 		ICompilationUnit icu = this.javaProject.getICUByName(name);
-
 		// get a working copy to work with
 //		ICompilationUnit workingCopy = this.javaProject.getWorkingCopy(icu);
-		
-
 		// perform in-lining
 		this.updatedICU = inlineDocMethod(icu);
 //		workingCopy.commitWorkingCopy(false, null);
 //		CompilationUnit cu = new CodeGenerator().polishCode(workingCopy);
-
-
 		// work on dead code
-//		detectAndGenerateFirstSolution();
-		detectAndGenerateSecondSolution();
-
+		detectAndGenerate();
 	}
 
 	/**
@@ -67,32 +60,25 @@ public class MethodDeclarationTransformer {
 		ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
 
 		if (!docMethodsList.isEmpty()) {
-
 			docMethodsList.stream().forEach(docMethod -> {
 				ArrayList<MethodInvocation> utilityInvocations = visitor.getUtilityInvocations(docMethod);
 
 				if (!utilityInvocations.isEmpty()) {
 					CompilationUnit cu = visitor.getParsedVersion(icu);
 					MethodInvocation invocation = utilityInvocations.get(0);
-
 					// update the IC after each in-line, to work with an updated version
 					ICompilationUnit updatedICU = inlineMethodInvocation(icu, cu, invocation);
 					inlineDocMethod(updatedICU);
 
 				}
-
-
 			});
-
 		}
 
 		return icu;
-
 	}
 
 	/**
 	 * The method that does the actual in-lining
-	 * 
 	 * @param icu               is where the utility invocation is found
 	 * @param cu                the parsed version of icu
 	 * @param utilityInvocation is the invocation to be in-lined
@@ -126,7 +112,6 @@ public class MethodDeclarationTransformer {
 
 	/**
 	 * gets the selections of a MethodInvocation in source code
-	 * 
 	 * @param node is the to-be-in-lined utility invocation
 	 * @return array of selections, body of utility method
 	 */
@@ -139,32 +124,14 @@ public class MethodDeclarationTransformer {
 	}
 
 	/**
-	 * this solution is based on reusing proposals, with UI elements
-	 */
-	private void detectAndGenerateFirstSolution() {
-		// work on dead code, the last in-lined version of the this icu
-		DeadCodeDetector detector = new DeadCodeDetector(updatedICU, javaProject);
-		// detect dead code
-		detector.detect();
-		// generate dead-code free .java file and embed it under the documentation
-		// package
-		try {
-			detector.generateCleanCode(javaProject.getDocumentationPackage());
-		} catch (JavaModelException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
+	 * Detect dead/unreachable code problems and generate clean code
 	 * this solution is based on reusing actual JDT code that removes the exact node that needs to be removed, no UI needed
 	 */
-	public void detectAndGenerateSecondSolution() {
+	public void detectAndGenerate() {
 		// work on dead code, the last in-lined version of the this icu
-		DeadCodeDetector detector = new DeadCodeDetector(updatedICU, javaProject);
+		DeadCodeDetector detector = new DeadCodeDetector(updatedICU);
 		// detect dead code
-		detector.detectProblems(updatedICU);
+		detector.detectProblems();
 		detector.generateCode(javaProject.getDocumentationPackage());
-
 	}
-
 }
