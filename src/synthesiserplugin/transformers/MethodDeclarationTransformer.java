@@ -18,6 +18,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import synthesiserplugin.deadcode.DeadCodeDetector;
 import synthesiserplugin.models.JavaProject;
+import synthesiserplugin.parser.Parser;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
 @SuppressWarnings("restriction")
@@ -45,6 +46,7 @@ public class MethodDeclarationTransformer {
 		this.updatedICU = inlineDocMethod(icu);
 //		workingCopy.commitWorkingCopy(false, null);
 //		CompilationUnit cu = new CodeGenerator().polishCode(workingCopy);
+		
 		// work on dead code
 		detectAndGenerate();
 	}
@@ -61,16 +63,19 @@ public class MethodDeclarationTransformer {
 			docMethodsList.stream().forEach(docMethod -> {
 				ArrayList<MethodInvocation> utilityInvocations = visitor.getUtilityInvocations(docMethod);
 
-				if (!utilityInvocations.isEmpty()) {
-					CompilationUnit cu = visitor.getParsedVersion(icu);
+				if (utilityInvocations.size() !=0) {
+					CompilationUnit cu = new Parser().parse(icu);
 					MethodInvocation invocation = utilityInvocations.get(0);
-					// update the IC after each in-line, to work with an updated version
+					// update the ICU after each in-line, to work with an updated version
 					ICompilationUnit updatedICU = inlineMethodInvocation(icu, cu, invocation);
 					inlineDocMethod(updatedICU);
 
 				}
+			
 			});
 		}
+		
+		
 
 		return icu;
 	}
