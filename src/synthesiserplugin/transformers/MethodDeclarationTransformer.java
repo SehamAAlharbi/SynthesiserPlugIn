@@ -16,10 +16,8 @@ import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
 import org.eclipse.ltk.core.refactoring.PerformRefactoringOperation;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import synthesiserplugin.deadcode.CodeGenerator;
 import synthesiserplugin.deadcode.DeadCodeDetector;
 import synthesiserplugin.models.JavaProject;
-import synthesiserplugin.parser.Parser;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
 @SuppressWarnings("restriction")

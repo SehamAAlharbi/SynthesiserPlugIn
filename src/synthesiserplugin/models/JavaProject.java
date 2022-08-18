@@ -146,11 +146,9 @@ public class JavaProject {
 	
 	// underlying resources are not retrieved, e.g. if the class extends another
 	// class, the methods in superclass is not recognised
-	public ICompilationUnit getWorkingCopy(ICompilationUnit icu) throws JavaModelException {
+	public StringBuffer getBuffer(ICompilationUnit icu) throws JavaModelException {
 
-		ICompilationUnit workingCopy = null;
-
-		icu.becomeWorkingCopy(null);
+		ICompilationUnit copy = null;
 
 		IBuffer buffer = icu.getBuffer();
 		String oldContents = buffer.getContents();
@@ -162,13 +160,10 @@ public class JavaProject {
 			stringBuffer.append(line + "\n");
 		}
 
-		workingCopy = documentationPackage.createCompilationUnit(icu.getElementName(), stringBuffer.toString(), false,
-				null);
+//		copy = documentationPackage.createCompilationUnit(icu.getElementName(), stringBuffer.toString(), false,
+//				null);
 
-		icu.reconcile(0, true, null, null);
-		icu.discardWorkingCopy();
-
-		return workingCopy;
+		return stringBuffer;
 
 	}
 

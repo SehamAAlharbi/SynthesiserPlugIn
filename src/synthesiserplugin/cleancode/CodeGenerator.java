@@ -1,6 +1,6 @@
-package synthesiserplugin.deadcode;
+package synthesiserplugin.cleancode;
 
-import java.util.List;	
+import java.util.List;		
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;

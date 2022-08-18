@@ -1,6 +1,6 @@
 package synthesiserplugin.deadcode;
 
-import java.util.ArrayList;
+import java.util.ArrayList;	
 import java.util.List;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -36,6 +36,7 @@ import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
+import synthesiserplugin.cleancode.CodeGenerator;
 import synthesiserplugin.parser.Parser;
 
 @SuppressWarnings("restriction")
