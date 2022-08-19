@@ -11,7 +11,7 @@ import synthesiserplugin.parser.Parser;
 
 public class Listener implements IExecutionListener {
 	
-	private ICompilationUnit original;
+	private static ICompilationUnit original;
 	private JavaProject javaProject;
 	
 	public Listener(ICompilationUnit original, JavaProject javaProject) {
@@ -29,7 +29,7 @@ public class Listener implements IExecutionListener {
 	public void postExecuteSuccess(String commandId, Object returnValue) {
 
 		System.out.println("postExecuteSuccess");
-		System.out.println(new Parser().parse(original).toString());
+//		System.out.println(new Parser().parse(original).toString());
 
 	}
 

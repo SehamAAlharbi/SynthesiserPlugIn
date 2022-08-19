@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;
+import org.eclipse.core.commands.AbstractHandler;		
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -9,6 +9,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Adapters;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -23,6 +24,7 @@ import synthesiserplugin.transformers.MethodDeclarationTransformer;
 public class Handler extends AbstractHandler {
 
 	public static IFile file;
+	private static ICompilationUnit original;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -35,8 +37,6 @@ public class Handler extends AbstractHandler {
 				IFile file = (IFile) resource;
 				Handler.file = file;
 			}
-			
-			
 
 			// get the Java project you want to work with
 			IJavaProject jProject = getProject();
@@ -44,9 +44,12 @@ public class Handler extends AbstractHandler {
 			// create a model
 			JavaProject javaProject = new JavaProject(jProject);
 
-			
+			// listener to pre-execution and post-execution
 			Listener listener = new Listener(javaProject.getICUByName(file.getName()),javaProject);
 			addListener(listener);
+			
+			// set original ICU - only use a working copy so you do not get the synthesised one - to be used later to set back to original content
+			Handler.original = javaProject.getICUByName(file.getName());
 			
 			// transform
 			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
@@ -81,6 +84,10 @@ public class Handler extends AbstractHandler {
 		}
 
 		return jProject;
+	}
+	
+	public ICompilationUnit getOriginal() {
+		return Handler.original;
 	}
 
 	private void addListener(Listener listener) {
