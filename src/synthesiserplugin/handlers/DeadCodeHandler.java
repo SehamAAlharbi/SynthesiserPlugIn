@@ -12,14 +12,11 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import synthesiserplugin.deadcode.DeadCodeDetector;
 import synthesiserplugin.models.JavaProject;
-import synthesiserplugin.parser.Parser;
-import synthesiserplugin.transformers.MethodDeclarationTransformer;
 
 public class DeadCodeHandler extends AbstractHandler {
 	
