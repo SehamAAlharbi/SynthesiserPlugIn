@@ -21,7 +21,7 @@ import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.parser.Parser;
 import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
-@SuppressWarnings("restriction")
+
 public class MethodDeclarationTransformer {
 
 	private JavaProject javaProject;
@@ -49,8 +49,6 @@ public class MethodDeclarationTransformer {
 
 //		CompilationUnit cu = new CodeGenerator().polishCode(workingCopy);
 		
-		// work on dead code
-		detectAndGenerate();
 	}
 
 	/**
@@ -128,15 +126,4 @@ public class MethodDeclarationTransformer {
 		return selections;
 	}
 
-	/**
-	 * Detect dead/unreachable code problems and generate clean code
-	 * this solution is based on reusing actual JDT code that removes the exact node that needs to be removed, no UI needed
-	 */
-	public void detectAndGenerate() {
-		// work on dead code, the last in-lined version of the this icu
-		DeadCodeDetector detector = new DeadCodeDetector(updatedICU);
-		// detect dead code
-		detector.detectProblems();
-		detector.generateCode(javaProject.getDocumentationPackage());
-	}
 }

@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;		
+import org.eclipse.core.commands.AbstractHandler;			
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -23,7 +23,7 @@ import synthesiserplugin.transformers.MethodDeclarationTransformer;
 
 public class Handler extends AbstractHandler {
 
-	public static IFile file;
+	private static IFile file;
 	private static ICompilationUnit original;
 
 	@Override
@@ -48,8 +48,8 @@ public class Handler extends AbstractHandler {
 			Listener listener = new Listener(javaProject.getICUByName(file.getName()),javaProject);
 			addListener(listener);
 			
-			// set original ICU - only use a working copy so you do not get the synthesised one - to be used later to set back to original content
-			Handler.original = javaProject.getICUByName(file.getName());
+			// set original ICU - only use a working copy so you do not get the synthesised version - to be used later to set content back to original
+			Handler.original = javaProject.getICUByName(file.getName()).getWorkingCopy(null);
 			
 			// transform
 			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
