@@ -109,7 +109,7 @@ public class CodeGenerator {
 
 			public boolean visit(MethodDeclaration node) {
 
-				@SuppressWarnings("unchecked")
+			
 				List<ASTNode> modifiers = (List<ASTNode>) node.getStructuralProperty(node.getModifiersProperty());
 				modifiers.stream().forEach(modifier -> {
 					if (modifier instanceof Annotation) {

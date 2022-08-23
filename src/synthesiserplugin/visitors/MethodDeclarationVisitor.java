@@ -1,19 +1,23 @@
 package synthesiserplugin.visitors;
 
-import java.util.ArrayList;				
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.ThisExpression;
 
 import synthesiserplugin.parser.Parser;
 
@@ -25,6 +29,7 @@ public class MethodDeclarationVisitor {
 	private ArrayList<MethodDeclaration> utilityMethods;
 	private Map<MethodDeclaration, ICompilationUnit> utilityMap;
 	private ArrayList<MethodDeclaration> documentationMethods;
+	private boolean isRecursive ;
 
 	public MethodDeclarationVisitor(ICompilationUnit icu) {
 		this.icu = icu;
@@ -33,6 +38,7 @@ public class MethodDeclarationVisitor {
 		this.utilityMethods = new ArrayList<MethodDeclaration>();
 		this.utilityMap = new HashMap<>();
 		this.documentationMethods = new ArrayList<MethodDeclaration>();
+		this.isRecursive = false;
 
 		visitCU();
 	}
@@ -96,7 +102,6 @@ public class MethodDeclarationVisitor {
 			public boolean visit(MethodDeclaration node) {
 				allMethodDeclarations.add(node);
 
-				@SuppressWarnings("unchecked")
 				List<ASTNode> modifiers = (List<ASTNode>) node.getStructuralProperty(node.getModifiersProperty());
 				modifiers.stream().forEach(modifier -> {
 					if (modifier instanceof Annotation) {
@@ -190,8 +195,13 @@ public class MethodDeclarationVisitor {
 
 					// check whether this invocation is ( of / binding to ) a utility method
 					IMethodBinding iMethod = (IMethodBinding) node.resolveMethodBinding();
-					if (iMethod != null && isUtilityBinding(iMethod)) {
+					MethodDeclaration declaration = getMethodDeclarationNode(node);
+				
+					// if the call is of a recursive method, it will not be in-lined - not added to the ArrayList
+					if (iMethod != null && isUtilityBinding(iMethod) && !isRecursive(declaration)) {
 						utilityInvocations.add(node);
+						//reset its class member value to false for future use by other invocations
+						isRecursive = false;
 					}
 
 					return true;
@@ -214,7 +224,7 @@ public class MethodDeclarationVisitor {
 		}
 
 		return isUtility;
-		
+
 	}
 
 	public boolean isUtilityMethod(String methodName) {
@@ -247,6 +257,55 @@ public class MethodDeclarationVisitor {
 		});
 
 		return names.contains(methodName);
+	}
+
+	/**
+	 * finds whether a method declaration contains recursive calls
+	 * @param declaration
+	 * @param node
+	 * @return
+	 */
+	public boolean isRecursive(MethodDeclaration declaration) {
+		declaration.accept(new ASTVisitor() {
+			public boolean visit(MethodInvocation node) {
+				
+				IMethodBinding fBinding = declaration.resolveBinding();
+				Expression expression = node.getExpression();
+				IMethodBinding binding = node.resolveMethodBinding();
+				if (binding == null || !Modifier.isStatic(binding.getModifiers()) && binding.isEqualTo(fBinding)
+						&& (expression == null || expression instanceof ThisExpression)) {
+					isRecursive = true;
+				}
+				
+				return true;
+			}
+		});
+
+		
+		return isRecursive;
+		
+	}
+	
+	/**
+	 * to be used to identify whether the invocation is of a recursive method
+	 * @return the MethodDeclaration node of a MethodInvocation
+	 */
+	public MethodDeclaration getMethodDeclarationNode(MethodInvocation node) {
+		
+		IMethodBinding binding = (IMethodBinding) node.getName().resolveBinding();
+		ICompilationUnit icu = (ICompilationUnit) binding.getJavaElement().getAncestor( IJavaElement.COMPILATION_UNIT );
+		// if its taken from an external JAR not a java project
+		
+		if ( icu == null ) {
+		   return null;
+		}
+		
+		// if the compilation unit is found, parse it and return the required MethodDeclaration
+		CompilationUnit cu =  new Parser().parse(icu);
+		MethodDeclaration declaration = (MethodDeclaration)cu.findDeclaringNode(binding.getKey());
+		
+		return declaration;
+		
 	}
 
 }

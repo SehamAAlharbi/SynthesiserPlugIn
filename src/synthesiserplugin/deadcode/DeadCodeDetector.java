@@ -39,7 +39,7 @@ import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import synthesiserplugin.cleancode.CodeGenerator;
 import synthesiserplugin.parser.Parser;
 
-@SuppressWarnings("restriction")
+
 public class DeadCodeDetector {
 
 	private ICompilationUnit icu;

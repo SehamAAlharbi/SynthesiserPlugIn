@@ -1,6 +1,6 @@
 package synthesiserplugin.handlers;
 
-import org.eclipse.core.commands.AbstractHandler;			
+import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -12,7 +12,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
@@ -48,6 +47,7 @@ public class Handler extends AbstractHandler {
 			Listener listener = new Listener(javaProject.getICUByName(file.getName()),javaProject);
 			addListener(listener);
 			
+			
 			// set original ICU - only use a working copy so you do not get the synthesised version - to be used later to set content back to original
 			Handler.original = javaProject.getICUByName(file.getName()).getWorkingCopy(null);
 			
@@ -57,7 +57,7 @@ public class Handler extends AbstractHandler {
 			// in-line all doc methods in the selected CU i.e. (.java) file by the user
 			transformer.inlineAllDocIn(file.getName());
 
-		} catch (JavaModelException e) {
+		} catch (CoreException e) {
 			e.printStackTrace();
 		}
 

@@ -59,10 +59,15 @@ public class MethodDeclarationTransformer {
 		MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
 		ArrayList<MethodDeclaration> docMethodsList = visitor.getDocumentationMethods();
 
-		if (!docMethodsList.isEmpty()) {
+		if (docMethodsList.size() !=0) {
 			docMethodsList.stream().forEach(docMethod -> {
 				ArrayList<MethodInvocation> utilityInvocations = visitor.getUtilityInvocations(docMethod);
 
+				utilityInvocations.stream().forEach(invo -> {
+					System.out.println(invo.getName().toString());
+				});
+				
+				
 				if (utilityInvocations.size() !=0) {
 					CompilationUnit cu = new Parser().parse(icu);
 					MethodInvocation invocation = utilityInvocations.get(0);
@@ -74,8 +79,6 @@ public class MethodDeclarationTransformer {
 			
 			});
 		}
-		
-		
 
 		return icu;
 	}
