@@ -5,6 +5,7 @@ import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Adapters;
@@ -12,18 +13,21 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+import synthesiserplugin.markers.RecursiveCallMarker;
 import synthesiserplugin.models.JavaProject;
 import synthesiserplugin.transformers.MethodDeclarationTransformer;
+import synthesiserplugin.visitors.MethodDeclarationVisitor;
 
 public class Handler extends AbstractHandler {
 
-	private static IFile file;
-	private static ICompilationUnit original;
+	public static IFile file;
+	public static ICompilationUnit original;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -33,8 +37,8 @@ public class Handler extends AbstractHandler {
 			IStructuredSelection selection = HandlerUtil.getCurrentStructuredSelection(event);
 			IResource resource = Adapters.adapt(selection.getFirstElement(), IResource.class);
 			if (resource instanceof IFile) {
-				IFile file = (IFile) resource;
-				Handler.file = file;
+				IFile ifile = (IFile) resource;
+				file = ifile;
 			}
 
 			// get the Java project you want to work with
@@ -44,18 +48,32 @@ public class Handler extends AbstractHandler {
 			JavaProject javaProject = new JavaProject(jProject);
 
 			// listener to pre-execution and post-execution
-			Listener listener = new Listener(javaProject.getICUByName(file.getName()),javaProject);
+			Listener listener = new Listener(javaProject.getICUByName(file.getName()), javaProject);
 			addListener(listener);
-			
-			
-			// set original ICU - only use a working copy so you do not get the synthesised version - to be used later to set content back to original
+
+			// set original ICU - only use a working copy so you do not get the synthesised
+			// version - to be used later to set content back to original
 			Handler.original = javaProject.getICUByName(file.getName()).getWorkingCopy(null);
-			
+
 			// transform
 			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
 
+			// *****//
+			ICompilationUnit icu = javaProject.getICUByName(file.getName());
+			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
+			visitor.markRecursiveInvocations();
+			IMarker[] markers = new RecursiveCallMarker().findMarkers(file);
+			for (IMarker marker : markers) {
+				System.out.println(marker.toString());
+				System.out.println(markers.length);
+				if (marker.getType().equalsIgnoreCase("org.eclipse.core.resources.problemmarker")) {
+					System.out.println("Found it!");
+				}
+			}
+			// *****//
+
 			// in-line all doc methods in the selected CU i.e. (.java) file by the user
-			transformer.inlineAllDocIn(file.getName());
+//			transformer.inlineAllDocIn(file.getName());
 
 		} catch (CoreException e) {
 			e.printStackTrace();
@@ -85,7 +103,7 @@ public class Handler extends AbstractHandler {
 
 		return jProject;
 	}
-	
+
 	public ICompilationUnit getOriginal() {
 		return Handler.original;
 	}

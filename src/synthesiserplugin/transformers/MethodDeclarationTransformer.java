@@ -41,13 +41,8 @@ public class MethodDeclarationTransformer {
 		// you are retrieving the CU by its name, what if there is more than one but in different packages?
 		ICompilationUnit icu = this.javaProject.getICUByName(name);
 		
-		// get a working copy to work with
-//		ICompilationUnit workingCopy = this.javaProject.getWorkingCopy(icu);
-		
 		// perform in-lining
 		this.updatedICU = inlineDocMethod(icu);
-
-//		CompilationUnit cu = new CodeGenerator().polishCode(workingCopy);
 		
 	}
 

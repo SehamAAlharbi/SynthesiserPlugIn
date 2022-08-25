@@ -41,7 +41,6 @@
 				</visibleWhen>
 			</command>
 		</menuContribution>
-		<!-- first menu contribution -->
 		
 		<!-- second menu contribution -->
 		<menuContribution allPopups="false" locationURI="popup:org.eclipse.ui.popup.any">
@@ -58,10 +57,14 @@
 				</visibleWhen>
 			</command>
 		</menuContribution>
-	<!-- second menu contribution -->
 	</extension>
 	
 	
+	<!-- recursive call marker -->
+	<extension id="RecursiveCall" point="org.eclipse.core.resources.markers">
+		<super type="org.eclipse.core.resources.problemmarker" />
+		<attribute name="RecursiveCallFactor" />
+		<persistent value="true" />
+	</extension>
 	
-
 </plugin>

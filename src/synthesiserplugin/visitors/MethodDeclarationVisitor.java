@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -19,11 +20,13 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.ThisExpression;
 
+import synthesiserplugin.handlers.Handler;
+import synthesiserplugin.markers.RecursiveCallMarker;
 import synthesiserplugin.parser.Parser;
 
 public class MethodDeclarationVisitor {
 
-	ICompilationUnit icu;
+	private ICompilationUnit icu;
 	private CompilationUnit cu;
 	private ArrayList<MethodDeclaration> allMethodDeclarations;
 	private ArrayList<MethodDeclaration> utilityMethods;
@@ -266,22 +269,24 @@ public class MethodDeclarationVisitor {
 	 * @return
 	 */
 	public boolean isRecursive(MethodDeclaration declaration) {
-		declaration.accept(new ASTVisitor() {
-			public boolean visit(MethodInvocation node) {
-				
-				IMethodBinding fBinding = declaration.resolveBinding();
-				Expression expression = node.getExpression();
-				IMethodBinding binding = node.resolveMethodBinding();
-				if (binding == null || !Modifier.isStatic(binding.getModifiers()) && binding.isEqualTo(fBinding)
-						&& (expression == null || expression instanceof ThisExpression)) {
-					isRecursive = true;
-				}
-				
-				return true;
-			}
-		});
-
 		
+		if (declaration != null) {
+			declaration.accept(new ASTVisitor() {
+				public boolean visit(MethodInvocation node) {
+
+					IMethodBinding fBinding = declaration.resolveBinding();
+					Expression expression = node.getExpression();
+					IMethodBinding binding = node.resolveMethodBinding();
+					if (binding == null || !Modifier.isStatic(binding.getModifiers()) && binding.isEqualTo(fBinding)
+							&& (expression == null || expression instanceof ThisExpression)) {
+						isRecursive = true;
+					}
+
+					return true;
+				}
+			});
+		}
+
 		return isRecursive;
 		
 	}
@@ -307,5 +312,61 @@ public class MethodDeclarationVisitor {
 		return declaration;
 		
 	}
+	
+	/**
+	 * marks all method invocations within this CU if they are of [1] recursive methods [2] annotated with @Utility
+	 */
+	public void markRecursiveInvocations() {
+		this.cu.accept(new ASTVisitor() {
+			public boolean visit(MethodDeclaration node) {
+
+				if (isDocumentationMethod(node)) {
+
+					node.accept(new ASTVisitor() {
+						public boolean visit(MethodInvocation Invonode) {
+
+							MethodDeclaration declaration = getMethodDeclarationNode(Invonode);
+							if (declaration != null && isUtilityMethod(declaration) && isRecursive(declaration)) {
+								// create a marker for this method invocation node so the user knows its
+								// location
+								IFile file = Handler.file;
+								int lineNumber = getCu().getLineNumber(Invonode.getStartPosition());
+								new RecursiveCallMarker().createMarker(file, lineNumber);
+								// reset its class member value to false for future use by other invocations
+								isRecursive = false;
+							}
+
+							return true;
+						}
+					});
+
+				}
+				return true;
+			}
+
+		});
+	}
+	
+	@SuppressWarnings("unchecked")
+	public boolean isDocumentationMethod(MethodDeclaration node) {
+		if (node == null ) {
+			return false;
+		}
+		List<ASTNode> modifiers = (List<ASTNode>) node.getStructuralProperty(node.getModifiersProperty());
+		boolean isDocumentationMethod = modifiers.stream().anyMatch(modifier -> modifier instanceof Annotation
+				&& ((Annotation) modifier).getTypeName().toString().equals("Documentation"));
+		return isDocumentationMethod;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public boolean isUtilityMethod(MethodDeclaration node) {
+		if (node == null ) {
+			return false;
+		}
+		List<ASTNode> modifiers = (List<ASTNode>) node.getStructuralProperty(node.getModifiersProperty());
+		boolean isUtilityMethod = modifiers.stream().anyMatch(modifier -> modifier instanceof Annotation
+				&& ((Annotation) modifier).getTypeName().toString().equals("Utility"));
+		return isUtilityMethod;
+	}	
 
 }
