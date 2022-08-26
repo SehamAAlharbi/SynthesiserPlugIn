@@ -319,12 +319,9 @@ public class MethodDeclarationVisitor {
 	public void markRecursiveInvocations() {
 		this.cu.accept(new ASTVisitor() {
 			public boolean visit(MethodDeclaration node) {
-
 				if (isDocumentationMethod(node)) {
-
 					node.accept(new ASTVisitor() {
 						public boolean visit(MethodInvocation Invonode) {
-
 							MethodDeclaration declaration = getMethodDeclarationNode(Invonode);
 							if (declaration != null && isUtilityMethod(declaration) && isRecursive(declaration)) {
 								// create a marker for this method invocation node so the user knows its
@@ -335,15 +332,12 @@ public class MethodDeclarationVisitor {
 								// reset its class member value to false for future use by other invocations
 								isRecursive = false;
 							}
-
 							return true;
 						}
 					});
-
 				}
 				return true;
 			}
-
 		});
 	}
 	

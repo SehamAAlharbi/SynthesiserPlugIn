@@ -1,5 +1,7 @@
 package synthesiserplugin.handlers;
 
+import java.util.ArrayList;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -41,6 +43,7 @@ public class Handler extends AbstractHandler {
 				file = ifile;
 			}
 
+			
 			// get the Java project you want to work with
 			IJavaProject jProject = getProject();
 
@@ -54,26 +57,23 @@ public class Handler extends AbstractHandler {
 			// set original ICU - only use a working copy so you do not get the synthesised
 			// version - to be used later to set content back to original
 			Handler.original = javaProject.getICUByName(file.getName()).getWorkingCopy(null);
-
-			// transform
-			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
-
-			// *****//
+			
+			// since markers are permanent, delete all previous markers made on the recursive method calls
+			file.deleteMarkers("org.eclipse.core.resources.problemmarker", false, IResource.DEPTH_ZERO );
+			
+			// mark new recursive method calls if any exists
 			ICompilationUnit icu = javaProject.getICUByName(file.getName());
 			MethodDeclarationVisitor visitor = new MethodDeclarationVisitor(icu);
 			visitor.markRecursiveInvocations();
-			IMarker[] markers = new RecursiveCallMarker().findMarkers(file);
-			for (IMarker marker : markers) {
-				System.out.println(marker.toString());
-				System.out.println(markers.length);
-				if (marker.getType().equalsIgnoreCase("org.eclipse.core.resources.problemmarker")) {
-					System.out.println("Found it!");
-				}
-			}
-			// *****//
 
+			// transform
+			MethodDeclarationTransformer transformer = new MethodDeclarationTransformer(javaProject);
+			
+			// the transformation is only done when there is no recursive method calls
+			if (new RecursiveCallMarker().findMarkers(file).isEmpty()) {
 			// in-line all doc methods in the selected CU i.e. (.java) file by the user
-//			transformer.inlineAllDocIn(file.getName());
+			transformer.inlineAllDocIn(file.getName());
+			}
 
 		} catch (CoreException e) {
 			e.printStackTrace();

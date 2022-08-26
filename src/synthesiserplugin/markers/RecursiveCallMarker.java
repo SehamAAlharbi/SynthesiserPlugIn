@@ -1,5 +1,7 @@
 package synthesiserplugin.markers;
 
+import java.util.ArrayList;
+
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
@@ -22,14 +24,23 @@ public class RecursiveCallMarker {
 		return marker;
 	}
 	
-	
-	public IMarker[] findMarkers(IResource target) {
+	/**
+	 * only returns the marker that were created using RecursiveCallMarker.createMarker()
+	 * @param target the IFile 
+	 * @return
+	 */
+	public ArrayList<IMarker> findMarkers(IResource target) {
 		String type = "org.eclipse.core.resources.problemmarker";
-		IMarker[] markers = null;
-		
-//		file.findMarkers(MARKER_ID, true, IResource.DEPTH_INFINITE);
+		IMarker[] allMarkers = null;
+		ArrayList<IMarker> markers = new ArrayList<IMarker>();
 		try {
-			markers = target.findMarkers(type, true, IResource.DEPTH_INFINITE);
+			allMarkers = target.findMarkers(type, false, IResource.DEPTH_ZERO);
+			// to return an ArrayList of markers
+			for (IMarker marker : allMarkers) {
+				if (marker.getType().equalsIgnoreCase("org.eclipse.core.resources.problemmarker")) {
+					markers.add(marker);
+				}
+			}
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
@@ -37,6 +48,10 @@ public class RecursiveCallMarker {
 		return markers;
 	}
 	
+	/**
+	 * deletes a particular marker to clean the ICU from previous markers
+	 * @param marker
+	 */
 	public void deleteMarker(IMarker marker) {
 		try {
 			marker.delete();
