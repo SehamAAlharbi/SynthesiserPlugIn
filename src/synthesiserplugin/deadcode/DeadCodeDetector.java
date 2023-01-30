@@ -1,6 +1,6 @@
 package synthesiserplugin.deadcode;
 
-import java.util.ArrayList;	
+import java.util.ArrayList;			
 import java.util.List;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
