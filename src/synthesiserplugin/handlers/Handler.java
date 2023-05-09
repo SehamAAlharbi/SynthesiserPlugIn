@@ -44,7 +44,7 @@ public class Handler extends AbstractHandler {
 			}
 
 			
-			// get the Java project you want to work with
+			// get the Java project that you want to work with
 			IJavaProject jProject = getProject();
 
 			// create a model
