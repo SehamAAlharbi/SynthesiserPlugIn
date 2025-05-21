@@ -51,7 +51,7 @@ public class JavaProject {
 		}
 
 		// a package for documentation examples
-		this.documentationPackage = this.sourceFolder.createPackageFragment("documentation.usage.examples", false,
+		this.documentationPackage = this.sourceFolder.createPackageFragment("docs.examples.linear", false,
 				null);
 
 		// parsed versions of all the iCompilationUnit (s)

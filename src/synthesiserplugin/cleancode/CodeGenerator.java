@@ -56,7 +56,7 @@ public class CodeGenerator {
 		StringBuffer buffer = new StringBuffer();
 		for (String line : lines) {
 			if (line == lines[0]) {
-				buffer.append("package documentation.usage.examples; \n\n");
+				buffer.append("package docs.examples.linear; \n\n");
 				continue;
 			}
 			buffer.append(line + "\n");
